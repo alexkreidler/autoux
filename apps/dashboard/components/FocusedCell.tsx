@@ -284,17 +284,22 @@ function Step({ step, runRel }: { step: TrajectoryRecord; runRel: string }) {
 }
 
 /**
- * The trajectory's screenshot_path is relative to its run dir
- * (e.g. "thumbnails/x__y/step_00.jpg"). Our /api/thumbnail expects a path
- * relative to runs/, so we prefix the run_dir name from the trajectory path.
+ * The trajectory's screenshot_path is relative to its run dir (the dir that
+ * holds both `trajectories/` and `thumbnails/`). Our /api/thumbnail expects
+ * a path relative to runs/, so we glue the dir-portion of the trajectory
+ * path back on.
  *
- *   trajectory path: "runs/iter_001/trajectories/foo__bar.jsonl"
- *   step.screenshot_path: "thumbnails/foo__bar/step_03.jpg"
+ *   trajectory path:           "runs/iter_001/trajectories/foo__bar.jsonl"
+ *   step.screenshot_path:      "thumbnails/foo__bar/step_03.jpg"
  *   → "iter_001/thumbnails/foo__bar/step_03.jpg"
+ *
+ *   sweep trajectory path:     "runs/apps_sweep_X/kanboard/trajectories/foo__bar.jsonl"
+ *   step.screenshot_path:      "thumbnails/foo__bar/step_03.jpg"
+ *   → "apps_sweep_X/kanboard/thumbnails/foo__bar/step_03.jpg"
  */
 function findRunRelPath(trajectoryPath: string, screenshotRel: string): string {
-  // Strip leading "runs/" from trajectoryPath, then take the run-dir name.
-  const m = trajectoryPath.match(/(?:^|\/)runs\/([^/]+)\//);
+  // Capture everything between `runs/` and `/trajectories/`.
+  const m = trajectoryPath.match(/(?:^|\/)runs\/(.+?)\/trajectories\//);
   const runDir = m ? m[1] : "";
   return runDir ? `${runDir}/${screenshotRel}` : screenshotRel;
 }

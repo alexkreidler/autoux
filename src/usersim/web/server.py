@@ -412,22 +412,25 @@ def reap_registry() -> dict:
 
 
 def _find_trajectory_jsonl(persona_id: str, task_id: str, browser_session_id: str | None) -> Path | None:
-    """Find the most-recent trajectory JSONL file matching persona+task. If a
-    browser_session_id is given, prefer the file whose header references it.
+    """Find the most-recent trajectory JSONL file matching persona+task.
+
+    Walks runs/ recursively because some run shapes are nested: regular
+    runs land at runs/<iter>/trajectories/<p>__<t>.jsonl, but the apps
+    sweep nests one level deeper at runs/apps_sweep_X/<app>/trajectories/...
+    If a browser_session_id is given, prefer the file whose header
+    references it.
     """
     runs = _project_root() / "runs"
     if not runs.exists():
         return None
+    pattern = f"{persona_id}__{task_id}.jsonl"
     candidates: list[tuple[float, Path]] = []
-    for d in runs.iterdir():
-        if not d.is_dir():
-            continue
-        f = d / "trajectories" / f"{persona_id}__{task_id}.jsonl"
-        if f.exists():
+    # rglob covers any nesting depth under runs/
+    for f in runs.rglob(pattern):
+        if f.is_file() and "trajectories" in f.parts:
             candidates.append((f.stat().st_mtime, f))
     if not candidates:
         return None
-    # Sort newest first
     candidates.sort(reverse=True)
     if browser_session_id:
         for _, f in candidates:

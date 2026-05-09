@@ -20,19 +20,25 @@ CELL_W, CELL_H = 640, 400
 
 
 def load_videos(iter_dir: Path, limit: int | None) -> list[Path]:
+    """Returns mp4 paths. Handles both shapes:
+      - Single iter dir: `<dir>/manifest.jsonl` + `<dir>/replays/*.mp4`
+      - Sweep root: `<dir>/<app>/replays/*.mp4` per app, no top-level manifest
+    """
     manifest = iter_dir / "manifest.jsonl"
-    if not manifest.exists():
-        sys.exit(f"no manifest at {manifest}")
-    rows = [json.loads(l) for l in manifest.read_text().splitlines() if l.strip()]
     paths: list[Path] = []
-    for r in rows:
-        replay = iter_dir / "replays" / f"{r['persona_id']}__{r['task_id']}.mp4"
-        if replay.exists():
-            paths.append(replay)
+    if manifest.exists():
+        rows = [json.loads(l) for l in manifest.read_text().splitlines() if l.strip()]
+        for r in rows:
+            replay = iter_dir / "replays" / f"{r['persona_id']}__{r['task_id']}.mp4"
+            if replay.exists():
+                paths.append(replay)
+    else:
+        # Sweep root — walk per-app subdirs, sorted by app name for stable layout.
+        paths = sorted(iter_dir.glob("*/replays/*.mp4"))
     if limit:
         paths = paths[-limit:]
     if not paths:
-        sys.exit(f"no replay mp4s in {iter_dir / 'replays'}")
+        sys.exit(f"no replay mp4s under {iter_dir}")
     return paths
 
 

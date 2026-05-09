@@ -100,6 +100,17 @@ _KEY_ALIASES: dict[str, str] = {
 }
 
 
+def _brief_args(action: Action) -> str:
+    """Compact action-args summary for logs/notes (truncates long text)."""
+    parts = []
+    for k, v in action.args.items():
+        s = str(v)
+        if len(s) > 24:
+            s = s[:21] + "..."
+        parts.append(f"{k}={s}")
+    return ", ".join(parts)
+
+
 def _normalize_key(spec: str) -> str:
     """Normalize a keypress spec to Playwright form. Accepts `ctrl+a`,
     `Control+A`, `cmd+shift+p`, single chars, named keys (`Enter`)."""
@@ -338,11 +349,24 @@ async def run_one(
                     terminal_reason = "abandoned"
                     break
 
+                # Some agents (e.g. Surfer) emit compound chains for `fill`:
+                # [click, keypress(ctrl+a), type, keypress(Enter)]. The chain
+                # must execute atomically inside one turn — fragmenting it
+                # across turns means the agent only sees focus state, never
+                # the typed text, and re-emits the same action forever.
+                # Execute every action; the screenshot/observation is taken
+                # AFTER the whole chain settles. The first Action is the
+                # "primary" recorded for delta semantics; the rest are
+                # appended as Step.notes for provenance.
                 action = response.actions[0]
+                tail = response.actions[1:]
                 turn_started = datetime.now()
 
                 t0 = time.monotonic()
                 await _execute_action(page, action)
+                for follow in tail:
+                    await page.wait_for_timeout(60)  # tiny settle between sub-steps
+                    await _execute_action(page, follow)
                 await page.wait_for_timeout(step_settle_ms)
                 exec_ms = int((time.monotonic() - t0) * 1000)
 
@@ -385,6 +409,13 @@ async def run_one(
 
                 turn_ended = datetime.now()
                 total_ms = response.telemetry.model_ms + exec_ms
+                notes: list[str] = []
+                if tail:
+                    notes.append(
+                        f"+{len(tail)} compound action(s): "
+                        + ", ".join(f"{f.type}({_brief_args(f)})" for f in tail)
+                    )
+
                 step = Step(
                     turn=turn,
                     started_at=turn_started,
@@ -409,6 +440,7 @@ async def run_one(
                         total_ms=total_ms,
                     ),
                     tokens=response.telemetry,
+                    notes=notes,
                 )
                 assert writer is not None
                 writer.write_step(step)
