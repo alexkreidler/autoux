@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from dotenv import load_dotenv
 
 from usersim.browsers.kernel import KernelProvider
 from usersim.clients import available as available_clients
-from usersim.clients import get_client
+from usersim.clients import get_client, preflight_keys
 from usersim.grid import compose_for_dir
 from usersim.map.runner import run_iteration
 from usersim.reduce.aggregator import aggregate, load_prev_feedback
@@ -36,6 +37,18 @@ def _try_compose_grid(out_dir: Path) -> None:
             print(f"[cli] no replays under {out_dir} — skipping grid")
     except Exception as e:
         print(f"[cli] grid compose failed: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+def _check_keys_or_exit(agent_type: str) -> None:
+    """Fail fast before spinning up Kernel sessions if env keys are missing.
+    Better to lose 0.5s than burn a partial rollout chasing a 401."""
+    missing = preflight_keys(agent_type)
+    if not os.environ.get("KERNEL_API_KEY"):
+        missing.append("KERNEL_API_KEY")
+    if missing:
+        print(f"[cli] missing env vars for agent={agent_type!r}: {missing}", file=sys.stderr)
+        print(f"[cli] add to .env at repo root, or export inline.", file=sys.stderr)
+        sys.exit(2)
 
 
 def _load_personas(path: Path) -> list[Persona]:
@@ -94,6 +107,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         agent_spec = {**agent_spec, "type": args.agent}
     if args.agent_endpoint:
         agent_spec["endpoint"] = args.agent_endpoint
+    _check_keys_or_exit(agent_spec.get("type") or "northstar")
     client = get_client(agent_spec)
     browser_provider = KernelProvider()
 
@@ -214,6 +228,7 @@ def cmd_sweep(args: argparse.Namespace) -> int:
     agent_spec = {"type": args.agent or "surfer"}
     if args.agent_endpoint:
         agent_spec["endpoint"] = args.agent_endpoint
+    _check_keys_or_exit(agent_spec["type"])
     client = get_client(agent_spec)
     browser_provider = KernelProvider()
 
@@ -227,6 +242,12 @@ def cmd_sweep(args: argparse.Namespace) -> int:
 
     print(f"[sweep] {len(apps)} apps × {len(config_personas)} personas → {len(triples)} rollouts")
     print(f"[sweep] agent={agent_spec['type']}  concurrency={args.concurrency}  out={out_root}\n")
+
+    if args.dry_run:
+        for app, persona, task in triples:
+            print(f"  [dry-run] {app.id:<20} {persona.id:<24} {task.id}")
+        print(f"\n  total: {len(triples)} rollouts (would burn ~${0.30 * len(triples):.2f} on Surfer)")
+        return 0
 
     sem = asyncio.Semaphore(args.concurrency)
 
@@ -281,8 +302,43 @@ def cmd_sweep(args: argparse.Namespace) -> int:
     successes = sum(1 for r in results if r["terminal_reason"] in ("success_dom", "success_url", "agent_done"))
     print(f"\n  successes: {successes}/{len(results)}")
     (out_root / "summary.json").write_text(json.dumps(results, indent=2))
+    _write_sweep_summary_md(out_root, results, agent_spec["type"])
     _try_compose_grid(out_root)
     return 0
+
+
+def _write_sweep_summary_md(
+    out_root: Path,
+    results: list[dict],
+    agent: str,
+) -> None:
+    """Human-readable sweep rollup at <out_root>/summary.md. Companion to
+    summary.json; the JSON is for tools, the MD is for eyeballing."""
+    by_terminal: dict[str, list[dict]] = {}
+    for r in results:
+        by_terminal.setdefault(r["terminal_reason"], []).append(r)
+    success_terms = {"success_dom", "success_url", "agent_done"}
+    n_success = sum(len(v) for k, v in by_terminal.items() if k in success_terms)
+    rate = (n_success / len(results)) if results else 0.0
+
+    lines = [
+        f"# Sweep summary  (`{agent}`)",
+        "",
+        f"- Rollouts: **{len(results)}**",
+        f"- Successes: **{n_success} ({rate:.0%})**",
+        "",
+        "## Outcomes",
+    ]
+    for term in sorted(by_terminal, key=lambda k: (-len(by_terminal[k]), k)):
+        lines.append(f"- `{term}` × {len(by_terminal[term])}")
+    lines.append("")
+    lines.append("## Per-rollout")
+    lines.append("| app | persona | task | outcome | steps |")
+    lines.append("|---|---|---|---|---|")
+    for r in sorted(results, key=lambda r: (r["app"], r["persona"], r["task"])):
+        emoji = "✅" if r["terminal_reason"] in success_terms else "⚠️"
+        lines.append(f"| {r['app']} | {r['persona']} | {r['task']} | {emoji} {r['terminal_reason']} | {r['n_steps']} |")
+    (out_root / "summary.md").write_text("\n".join(lines) + "\n")
 
 
 def filter_app_tasks(tasks: list[Task], wanted_csv: str | None) -> list[Task]:
@@ -342,6 +398,8 @@ def main() -> int:
     ps.add_argument("--agent", choices=available_clients())
     ps.add_argument("--agent-endpoint")
     ps.add_argument("--max-turns", type=int, default=None)
+    ps.add_argument("--dry-run", action="store_true",
+                    help="print the planned (app, persona, task) triples and exit; no rollouts")
     ps.set_defaults(func=cmd_sweep)
 
     args = p.parse_args()

@@ -18,6 +18,11 @@ dependencies = [
     "uvicorn>=0.46.0",
 ]
 
+[project.scripts]
+usersim = "usersim.cli:main"
+usersim-grid = "usersim.grid:main"
+usersim-analyze = "usersim.analyze:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/usersim", "src/coder"]
 

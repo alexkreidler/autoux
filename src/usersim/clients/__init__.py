@@ -45,6 +45,22 @@ def register(name: str, factory: Callable[[dict[str, Any]], AgentClient]) -> Non
     _REGISTRY[name] = factory
 
 
+# Required env vars per provider — used by `preflight_keys` to fail fast
+# when invoking a CLI command with a missing credential, before we spin
+# up Kernel sessions / start burning rollout time.
+REQUIRED_ENV: dict[str, list[str]] = {
+    "northstar": ["TZAFON_API_KEY"],
+    "claude": ["ANTHROPIC_API_KEY"],
+    "surfer": ["ANTHROPIC_API_KEY"],  # Surfer's Navigator uses Anthropic
+}
+
+
+def preflight_keys(agent_name: str) -> list[str]:
+    """Returns a list of missing env vars for the given agent. Empty = OK."""
+    import os
+    return [k for k in REQUIRED_ENV.get(agent_name, []) if not os.environ.get(k)]
+
+
 def available() -> list[str]:
     return sorted(_REGISTRY.keys())
 

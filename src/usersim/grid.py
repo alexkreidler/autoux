@@ -164,7 +164,14 @@ def compose_grid(
         "-t", f"{duration:.3f}",
         str(out),
     ]
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True)
+    except (subprocess.CalledProcessError, KeyboardInterrupt):
+        # Don't leave a partial mp4 — re-runs see "exists, skip" otherwise,
+        # and partial files fail QuickTime with `moov atom not found`.
+        if out.exists():
+            out.unlink()
+        raise
     return out
 
 
