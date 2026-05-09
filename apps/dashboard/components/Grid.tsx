@@ -4,13 +4,14 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import Cell from "./Cell";
 import type { ActiveRollout, Persona } from "@/lib/types";
 
-// Cell aspect ratio: 16:10 = 1.6 (matches the iframe)
+// Cell aspect ratio: 16:10 = 1.6 (the iframe fills the entire cell now;
+// avatar/status/turn-info are overlays on top, no header strip).
 const CELL_AR = 16 / 10;
 // Minimum readable cell width. Cells thinner than this are unusable; we'd
 // rather have fewer columns + scrolling-free overflow than micro-stripes.
-const MIN_CELL_W = 240;
-// Reserve for the header strip in each cell (avatar + name + badge).
-const TOP_STRIP_PX = 56;
+const MIN_CELL_W = 260;
+// No fixed chrome anymore — cell height = cellW / aspectRatio.
+const CHROME_PX = 0;
 
 interface Props {
   sessions: ActiveRollout[];
@@ -44,7 +45,7 @@ function computeLayout(n: number, containerW: number, containerH: number): {
   for (let cols = Math.min(maxCols, n); cols >= 1; cols--) {
     const rows = Math.ceil(n / cols);
     const cellW = (containerW - gap * (cols - 1)) / cols;
-    const cellH = cellW / CELL_AR + TOP_STRIP_PX;
+    const cellH = cellW / CELL_AR + CHROME_PX;
     const totalH = cellH * rows + gap * (rows - 1);
     if (totalH <= containerH) {
       return { cols, rows, cellH };
@@ -54,7 +55,7 @@ function computeLayout(n: number, containerW: number, containerH: number): {
   const cols = Math.min(maxCols, n);
   const rows = Math.ceil(n / cols);
   const cellW = (containerW - gap * (cols - 1)) / cols;
-  const cellH = cellW / CELL_AR + TOP_STRIP_PX;
+  const cellH = cellW / CELL_AR + CHROME_PX;
   return { cols, rows, cellH };
 }
 

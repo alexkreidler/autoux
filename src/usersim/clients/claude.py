@@ -36,8 +36,8 @@ from tenacity import (
 
 from usersim.schemas import Action, AgentResponse, Observation, TurnMeta
 
-MODEL = "claude-sonnet-4-6"
-BETAS = ["computer-use-2025-01-24"]
+MODEL = "claude-3-5-sonnet-20241022"  # original computer-use model
+BETAS = ["computer-use-2024-10-22"]
 MAX_TOKENS = 4096
 
 _TRANSIENT = (APIConnectionError, APITimeoutError, InternalServerError, RateLimitError, APIStatusError)
@@ -49,7 +49,7 @@ _TRANSIENT = (APIConnectionError, APITimeoutError, InternalServerError, RateLimi
 
 def _tools(w: int, h: int) -> list[dict[str, Any]]:
     return [{
-        "type": "computer_20250124",
+        "type": "computer_20241022",
         "name": "computer",
         "display_width_px": w,
         "display_height_px": h,

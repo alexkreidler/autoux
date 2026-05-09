@@ -47,40 +47,42 @@ export default function Cell({ session: s, persona }: Props) {
   const reasoning = s.last_reasoning ?? "";
 
   return (
-    <div className={`relative bg-white border ${borderColor} overflow-hidden flex flex-col h-full transition-colors duration-150 group`}>
-      {/* top strip — avatar, name, status pill */}
-      <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-line-soft bg-cream">
-        <AvatarChip personaId={s.persona_id} size={36} />
-        <div className="flex-1 min-w-0">
-          <div className="text-[13px] font-medium text-ink lowercase truncate">{name}</div>
-          <div className="text-[11px] text-muted mt-px truncate">{meta}</div>
-        </div>
-        <span
-          className={`inline-block px-2 py-0.5 text-[10px] font-semibold lowercase tracking-[0.05em] border ${badgeStyle}`}
-        >
-          {status.replace("_", " ")}
-        </span>
-      </div>
-
-      {/* iframe at the cell's natural 16:10. Don't flex-1 — that stretches
-          the iframe element past Kernel's actual viewport and produces black
-          letterboxing around a tiny rendered page. */}
+    <div className={`relative bg-white border ${borderColor} overflow-hidden h-full transition-colors duration-150 group`}>
+      {/* iframe takes the entire cell at natural 16:10 */}
       {s.live_view_url ? (
         <iframe
           src={s.live_view_url}
-          className="w-full border-0 bg-cream"
-          style={{ aspectRatio: "16/10" }}
+          className="w-full h-full border-0 bg-cream block"
           sandbox="allow-scripts allow-same-origin"
           allow="clipboard-read; clipboard-write"
           title={`session ${s.browser_session_id}`}
         />
       ) : (
-        <div className="w-full bg-cream flex items-center justify-center" style={{ aspectRatio: "16/10" }}>
+        <div className="w-full h-full bg-cream flex items-center justify-center">
           <AvatarChip personaId={s.persona_id} size={64} />
         </div>
       )}
 
-      {/* corner overlay: tiny turn/tok footer + speech-bubble on hover */}
+      {/* avatar chip — top-left. Hover reveals title + meta tooltip below. */}
+      <div className="absolute top-2 left-2 group/avatar">
+        <div className="ring-2 ring-white shadow-sm rounded">
+          <AvatarChip personaId={s.persona_id} size={32} />
+        </div>
+        {/* tooltip — title + meta on avatar hover */}
+        <div className="pointer-events-none absolute top-full left-0 mt-1 px-2 py-1.5 bg-ink text-cream text-[11px] leading-tight rounded shadow-lg opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-150 whitespace-nowrap z-20">
+          <div className="font-medium lowercase">{name}</div>
+          <div className="text-[10px] opacity-75 mt-0.5">{meta}</div>
+        </div>
+      </div>
+
+      {/* status pill — top-right, no border */}
+      <span
+        className={`absolute top-2 right-2 px-2 py-0.5 text-[10px] font-semibold lowercase tracking-[0.05em] border ${badgeStyle} shadow-sm`}
+      >
+        {status.replace("_", " ")}
+      </span>
+
+      {/* bottom overlay: turn/action/tokens. Always visible. */}
       <div className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-white/90 backdrop-blur-sm border-t border-line-soft text-[10px] flex justify-between items-center gap-2 pointer-events-none">
         <span className="text-ink-soft font-mono truncate">
           turn {s.current_turn} · {actionLabel(s.last_action)}
@@ -88,14 +90,13 @@ export default function Cell({ session: s, persona }: Props) {
         <span className="text-muted tnum shrink-0">{totalTok.toLocaleString()} tok</span>
       </div>
 
-      {/* speech bubble — appears on cell hover. Anchored top-right of the
-          iframe area, points at the avatar in the top strip. */}
+      {/* speech bubble — model reasoning on cell hover (group). */}
       {reasoning && (
-        <div className="pointer-events-none absolute left-3 top-[58px] max-w-[80%] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10">
-          <div className="relative bg-ink text-cream text-[11px] leading-snug px-3 py-2 rounded-lg shadow-lg max-h-[120px] overflow-hidden">
-            {/* tail — points up-left toward avatar */}
+        <div className="pointer-events-none absolute left-2 top-12 max-w-[85%] opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10">
+          <div className="relative bg-ink text-cream text-[11px] leading-snug px-3 py-2 rounded-lg shadow-lg max-h-[140px] overflow-hidden">
+            {/* tail — points up-left toward the avatar */}
             <div className="absolute -top-1.5 left-3 w-3 h-3 bg-ink rotate-45" />
-            <span className="relative italic">"{reasoning.length > 200 ? reasoning.slice(0, 200) + "…" : reasoning}"</span>
+            <span className="relative italic">&ldquo;{reasoning.length > 220 ? reasoning.slice(0, 220) + "…" : reasoning}&rdquo;</span>
           </div>
         </div>
       )}
