@@ -18,11 +18,24 @@ from dotenv import load_dotenv
 from usersim.browsers.kernel import KernelProvider
 from usersim.clients import available as available_clients
 from usersim.clients import get_client
+from usersim.grid import compose_for_dir
 from usersim.map.runner import run_iteration
 from usersim.reduce.aggregator import aggregate, load_prev_feedback
 from usersim.schemas import Persona, Task
 
 load_dotenv()
+
+
+def _try_compose_grid(out_dir: Path) -> None:
+    """Auto-fire grid encode at end of run/sweep. Failures are logged but
+    don't propagate — a bad ffmpeg run shouldn't kill an otherwise-successful
+    iteration. Skips silently if there are no replays."""
+    try:
+        result = compose_for_dir(out_dir)
+        if result is None:
+            print(f"[cli] no replays under {out_dir} — skipping grid")
+    except Exception as e:
+        print(f"[cli] grid compose failed: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 def _load_personas(path: Path) -> list[Persona]:
@@ -118,6 +131,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"[cli] feedback → {out_dir}/feedback.json")
     print(f"[cli] success_gameable={fb.metrics.success_rate_gameable:.1%} "
           f"abandonment={fb.metrics.abandonment_rate:.1%} errors={fb.metrics.errors_per_iteration}")
+    _try_compose_grid(out_dir)
     return 0
 
 
@@ -171,6 +185,7 @@ def cmd_debug(args: argparse.Namespace) -> int:
         target_commit=config.get("target_commit", "external"),
         out_dir=out_dir,
     )
+    _try_compose_grid(out_dir)
     return 0
 
 
@@ -266,6 +281,7 @@ def cmd_sweep(args: argparse.Namespace) -> int:
     successes = sum(1 for r in results if r["terminal_reason"] in ("success_dom", "success_url", "agent_done"))
     print(f"\n  successes: {successes}/{len(results)}")
     (out_root / "summary.json").write_text(json.dumps(results, indent=2))
+    _try_compose_grid(out_root)
     return 0
 
 
