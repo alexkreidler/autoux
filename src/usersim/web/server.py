@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -327,6 +328,87 @@ def run_status(run_id: str) -> RunInfo:
 def runs_list() -> list[RunInfo]:
     with _RUNS_LOCK:
         return sorted(_RUNS.values(), key=lambda r: r.started_at, reverse=True)
+
+
+@app.post("/api/run/{run_id}/cancel")
+def run_cancel(run_id: str) -> RunInfo:
+    """Cancel a running launch. SIGTERM first, SIGKILL after 3s if still alive.
+
+    Also reaps any orphan Kernel browser sessions left behind. Always returns
+    the RunInfo even if the process was already dead.
+    """
+    with _RUNS_LOCK:
+        info = _RUNS.get(run_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="run not found")
+
+    pid = info.pid
+    if pid is None:
+        raise HTTPException(status_code=409, detail="run has no pid")
+
+    if info.status not in ("running", "pending"):
+        return info  # already finished, nothing to do
+
+    # We started the process group with start_new_session=True; kill the whole pg.
+    try:
+        os.killpg(os.getpgid(pid), signal.SIGTERM)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+    # Give it 3s to die gracefully, then SIGKILL.
+    def _force_kill():
+        time.sleep(3)
+        try:
+            os.killpg(os.getpgid(pid), signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+        # Reap any Kernel browser sessions left behind by the killed run.
+        try:
+            from kernel import Kernel
+            client = Kernel(api_key=os.environ.get("KERNEL_API_KEY", ""))
+            for s in client.browsers.list():
+                try:
+                    client.browsers.delete_by_id(s.session_id)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        # Clear the active.json registry so the dashboard doesn't show ghosts.
+        try:
+            (_project_root() / "runs" / "active.json").write_text("[]")
+        except Exception:
+            pass
+
+    threading.Thread(target=_force_kill, daemon=True).start()
+
+    with _RUNS_LOCK:
+        info.status = "cancelled"
+        info.ended_at = time.time()
+    return info
+
+
+@app.post("/api/registry/reap")
+def reap_registry() -> dict:
+    """Force-clear the active.json registry and reap all live Kernel browser
+    sessions. Use when the dashboard shows ghost cells with no underlying run.
+    """
+    reaped_kernel = 0
+    try:
+        from kernel import Kernel
+        client = Kernel(api_key=os.environ.get("KERNEL_API_KEY", ""))
+        for s in client.browsers.list():
+            try:
+                client.browsers.delete_by_id(s.session_id)
+                reaped_kernel += 1
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        (_project_root() / "runs" / "active.json").write_text("[]")
+    except Exception:
+        pass
+    return {"registry_cleared": True, "kernel_sessions_reaped": reaped_kernel}
 
 
 @app.get("/api/run/{run_id}/grid")

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchJson } from "@/lib/api";
+import { apiUrl, fetchJson } from "@/lib/api";
 import { useSessions } from "./useSessions";
 import MetricBar from "./MetricBar";
 import Grid from "./Grid";
@@ -12,6 +12,7 @@ export default function Dashboard() {
   const sessions = useSessions();
   const [personas, setPersonas] = useState<Record<string, Persona>>({});
   const [showModal, setShowModal] = useState(false);
+  const [reaping, setReaping] = useState(false);
 
   useEffect(() => {
     function load() {
@@ -24,6 +25,20 @@ export default function Dashboard() {
     const id = setInterval(load, 30_000);
     return () => clearInterval(id);
   }, []);
+
+  async function handleReap() {
+    if (!confirm("kill all live kernel sessions and clear the registry?\n\nthis will terminate any in-flight runs.")) return;
+    setReaping(true);
+    try {
+      const res = await fetch(apiUrl("/api/registry/reap"), { method: "POST" });
+      const body = await res.json();
+      alert(`reaped ${body.kernel_sessions_reaped ?? 0} kernel sessions; registry cleared.`);
+    } catch (e) {
+      alert(`reap failed: ${e instanceof Error ? e.message : "unknown"}`);
+    } finally {
+      setReaping(false);
+    }
+  }
 
   return (
     // Full-viewport flex column — nothing scrolls except the modal
@@ -41,7 +56,18 @@ export default function Dashboard() {
       <MetricBar />
 
       {/* action bar */}
-      <div className="flex justify-end mb-[14px]">
+      <div className="flex justify-end items-center gap-3 mb-[14px]">
+        {sessions.length > 0 && (
+          <button
+            type="button"
+            onClick={handleReap}
+            disabled={reaping}
+            className="px-3 py-2 border border-rust text-rust text-[12px] lowercase tracking-[0.02em] hover:bg-rust hover:text-white transition-colors disabled:opacity-40"
+            title="terminate all live kernel sessions and clear the registry"
+          >
+            {reaping ? "reaping…" : `kill all (${sessions.length})`}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setShowModal(true)}
