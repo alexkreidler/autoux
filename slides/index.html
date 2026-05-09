@@ -189,27 +189,102 @@
 </section>
 
 <!-- 4. ARCHITECTURE -->
-<section class="slide">
+<section class="slide" style="padding: 3vh 4vw;">
   <h2>Architecture</h2>
-  <p>Closed loop, fully reproducible. Pydantic-validated schemas across all boundaries.</p>
-<pre><code>┌──── MAP ────────────────────────────────────────────┐
-│  N personas × M tasks × K apps  (registry-defined)  │
-│   ↓  asyncio fanout, semaphore-bounded              │
-│  per-cell: Kernel browser ↔ CUA agent               │
-│            streaming JSONL + replay mp4             │
-└─────────────────────────┬───────────────────────────┘
-                          ↓
-┌──── REDUCE ─────────────────────────────────────────┐
-│  Stage 1: rule-based patterns + URL/DOM match       │
-│  Stage 2: held-out Claude judge   (HIDDEN)          │
-│  Per-persona segmentation + distinctive quotes      │
-└─────────────────────────┬───────────────────────────┘
-                          ↓
-              runs/iter_N/feedback.json
-                          ↓
-┌──── CODER ──────────────────────────────────────────┐
-│  read feedback → patch app → redeploy → repeat      │
-└─────────────────────────────────────────────────────┘</code></pre>
+  <div class="mermaid" style="margin: 0.3em 0;">
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1e2233',
+    'primaryTextColor': '#e8e8e8',
+    'primaryBorderColor': '#3a4060',
+    'lineColor': '#5a6a90',
+    'secondaryColor': '#1a1f30',
+    'tertiaryColor': '#161a28',
+    'fontFamily': 'Inter, system-ui, sans-serif',
+    'fontSize': '16px',
+    'clusterBkg': '#12151f',
+    'clusterBorder': '#2a3050',
+    'edgeLabelBackground': '#0a0a0a',
+    'nodeTextColor': '#e8e8e8'
+  },
+  'flowchart': {
+    'curve': 'basis',
+    'padding': 18,
+    'nodeSpacing': 30,
+    'rankSpacing': 55,
+    'htmlLabels': true,
+    'useMaxWidth': true
+  }
+}}%%
+
+flowchart LR
+
+  subgraph MAP["MAP -- Simulation"]
+    direction TB
+    IN["`**Personas x Tasks x Apps**
+    registry-defined`"]
+    W["`**Worker**
+    map/worker.py`"]
+    AC["`**AgentClient**
+    Northstar / Claude / Surfer`"]
+    BP["`**Kernel Browser**
+    CDP session + replay`"]
+
+    IN --> W
+    W --> AC
+    AC --> BP
+    BP -->|observe / act| AC
+  end
+
+  TRAJ["`**Trajectory**
+  JSONL + screenshots`"]
+
+  subgraph REDUCE["REDUCE -- Signal"]
+    direction TB
+    G1["`**Stage 1 Grader**
+    URL / DOM match`"]
+    G2["`**Stage 2 Held-out Judge**
+    detects reward hacking`"]
+    PAT["`**Pattern Detectors**
+    friction signals`"]
+    AGG["`**Aggregator**
+    per-persona segments`"]
+
+    G1 --> PAT
+    G1 --> G2
+    PAT --> AGG
+    G2 --> AGG
+  end
+
+  FB["`**feedback.json**
+  The Contract`"]
+
+  subgraph CODER["CODER -- Patch"]
+    direction TB
+    LOOP["`**Iteration Loop**
+    coder/loop.py`"]
+    AGENT["`**Claude CLI**
+    reads friction, patches`"]
+    DEP["`**Deploy**
+    K8s rollout`"]
+
+    LOOP --> AGENT
+    AGENT --> DEP
+  end
+
+  TARGET["`**Target App**
+  redeployed`"]
+
+  MAP --> TRAJ --> REDUCE --> FB --> CODER --> TARGET
+  TARGET -.->|next iteration| MAP
+
+  classDef data fill:#0f1a12,stroke:#2a6040,stroke-width:2px,color:#6ad08c
+  classDef warn fill:#1a1508,stroke:#6b5a20,stroke-width:2px,color:#ffb86b
+
+  class TRAJ,FB,TARGET data
+  class G2 warn
+  </div>
   <p class="small"><a href="https://github.com/alexkreidler/computer-hack/tree/main/src/usersim">engine</a> · <a href="https://github.com/alexkreidler/computer-hack/tree/main/src/coder">coder harness</a> · <a href="https://github.com/alexkreidler/computer-hack/tree/main/apps/dashboard">dashboard</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/configs/apps/registry.jsonl">app registry</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/configs/personas/seed.jsonl">persona registry</a></p>
   <div class="num">04</div>
 </section>
@@ -287,24 +362,95 @@
   <div class="num">06</div>
 </section>
 
-<!-- 6. TWO-STAGE REWARD -->
-<section class="slide">
-  <h2>Reduce — two-stage reward (the firewall)</h2>
+<!-- 6. REWARD HACKING -->
+<section class="slide" style="padding: 3vh 4vw;">
+  <h2>Reward Hacking</h2>
   <p>Coding agents trained against observable metrics will <a href="https://arxiv.org/abs/2209.13085">game them</a>. Our defense: a held-out judge the coder cannot see.</p>
-<pre><code>Stage 1 (cheap, every trajectory) ────── VISIBLE TO CODER:
-  success_gameable    URL/DOM match
-  pattern detectors   form_clears_on_submit, stuck_on_button,
-                      dead_click_storm, patience_exhausted, …
-                      (rule-based; mapped 1:1 to suggested fixes)
+  <div class="mermaid" style="margin: 0.4em 0;">
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1e2233',
+    'primaryTextColor': '#e8e8e8',
+    'primaryBorderColor': '#3a4060',
+    'lineColor': '#5a6a90',
+    'secondaryColor': '#1a1f30',
+    'tertiaryColor': '#161a28',
+    'fontFamily': 'Inter, system-ui, sans-serif',
+    'fontSize': '16px',
+    'clusterBkg': '#12151f',
+    'clusterBorder': '#2a3050',
+    'edgeLabelBackground': '#0a0a0a',
+    'nodeTextColor': '#e8e8e8'
+  },
+  'flowchart': {
+    'curve': 'basis',
+    'padding': 18,
+    'nodeSpacing': 30,
+    'rankSpacing': 55,
+    'htmlLabels': true,
+    'useMaxWidth': true
+  }
+}}%%
 
-Stage 2 (periodic, every Nth iter) ───── HIDDEN FROM CODER:
-  Claude judge over text trajectory + 3 keyframes
-  prompt: "would a real human consider this a real success?"
-  → success_heldout
+flowchart LR
 
-  delta = success_gameable − success_heldout
-  if delta widens iter→iter, the coder is HACKING the goalpost.</code></pre>
-  <p>A <strong>falsifiable, auditable</strong> measure of reward hacking in the loop.</p>
+  TRAJ["`**Trajectories**
+  JSONL + screenshots`"]
+
+  subgraph S1["STAGE 1 -- Visible to Coder"]
+    direction TB
+    GRADE1["`**Grader**
+    URL / DOM match`"]
+    SG["`**success_gameable**`"]
+    PAT["`**Pattern Detectors**
+    form_clears
+    stuck_on_button
+    dead_click_storm
+    patience_exhausted`"]
+
+    GRADE1 --> SG
+    GRADE1 --> PAT
+  end
+
+  subgraph S2["STAGE 2 -- Hidden from Coder"]
+    direction TB
+    Q["`*would a real human
+    consider this a success?*`"]
+    JUDGE["`**Claude Judge**
+    trajectory + 3 keyframes`"]
+    SH["`**success_heldout**`"]
+
+    Q --> JUDGE --> SH
+  end
+
+  subgraph DELTA["DETECTION"]
+    direction TB
+    CMP["`**delta**
+    gameable minus heldout`"]
+    ALARM["`**Delta widens?**
+    Coder is hacking
+    the goalpost`"]
+
+    CMP --> ALARM
+  end
+
+  TRAJ --> S1
+  TRAJ --> S2
+  SG --> CMP
+  SH --> CMP
+  PAT -->|friction signal| FB["`**feedback.json**
+  to Coder`"]
+
+  classDef data fill:#0f1a12,stroke:#2a6040,stroke-width:2px,color:#6ad08c
+  classDef warn fill:#1a1508,stroke:#6b5a20,stroke-width:2px,color:#ffb86b
+  classDef danger fill:#1a0f0f,stroke:#6b2020,stroke-width:2px,color:#ff6b6b
+
+  class TRAJ,FB data
+  class JUDGE,SH,Q warn
+  class ALARM danger
+  </div>
+  <p style="margin-top:0.3em">A <strong>falsifiable, auditable</strong> measure of reward hacking in the loop.</p>
   <p class="small"><a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/reduce/grader.py">grader.py</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/reduce/patterns.py">patterns.py</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/reduce/aggregator.py">aggregator.py</a></p>
   <div class="num">07</div>
 </section>
@@ -417,6 +563,16 @@ Stage 2 (periodic, every Nth iter) ───── HIDDEN FROM CODER:
 </section>
 
 <div class="hint">← / → to navigate · F to fullscreen</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'loose',
+    fontFamily: 'Inter, system-ui, sans-serif',
+    theme: 'dark'
+  });
+</script>
 
 <script>
   // arrow-key + spacebar nav, F for fullscreen
