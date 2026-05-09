@@ -56,7 +56,76 @@
         border-radius: 8px; padding: 0.9em 1.1em; overflow: auto;
         font-family: "JetBrains Mono", Menlo, "Cascadia Mono", monospace;
         font-size: 0.85rem; line-height: 1.45; color: #d4d4d4; }
-  pre code { background: none; padding: 0; }
+  pre code { background: none; padding: 0; border: none; }
+  pre.shiki {
+    background: #1a1b26 !important;
+    border: 1px solid #292e42;
+    border-radius: 0 0 10px 10px;
+    padding: 1em 1.2em;
+    font-family: "JetBrains Mono", Menlo, "Cascadia Mono", monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 0;
+    tab-size: 4;
+  }
+  pre.shiki code {
+    background: none !important;
+    padding: 0;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+  pre.shiki .line {
+    display: inline-block;
+    width: 100%;
+    padding: 0 0.3em;
+    border-radius: 3px;
+  }
+  pre.shiki .line:hover {
+    background: rgba(78,161,255,0.06);
+  }
+  .code-window {
+    position: relative;
+    margin: 0.5em 0;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+    overflow: hidden;
+  }
+  .code-window .chrome {
+    background: #16161e;
+    border-bottom: 1px solid #292e42;
+    padding: 0.5em 0.85em;
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+  .code-window .chrome .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .code-window .chrome .dot.r { background: #f7768e; }
+  .code-window .chrome .dot.y { background: #e0af68; }
+  .code-window .chrome .dot.g { background: #9ece6a; }
+  .code-window .chrome .title {
+    flex: 1;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #565f89;
+    font-family: "JetBrains Mono", Menlo, monospace;
+    letter-spacing: 0.02em;
+  }
+  .code-window .chrome .lang-tag {
+    font-size: 0.6rem;
+    color: #565f89;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: "Inter", system-ui, sans-serif;
+    background: rgba(255,255,255,0.04);
+    padding: 0.15em 0.5em;
+    border-radius: 3px;
+  }
+  .code-window pre.shiki { border-radius: 0; border: none; }
   table { border-collapse: collapse; font-size: 0.95rem; margin: 0.4em 0 1em; }
   th, td { border: 1px solid var(--border); padding: 0.5em 0.85em; text-align: left; vertical-align: top; }
   th { background: var(--surface); font-weight: 600; color: #fff; }
@@ -364,12 +433,24 @@ flowchart LR
   <div class="grid-2">
     <div>
       <p><strong>105 personas</strong> across age, device, language fluency, tech literacy, prior experience. <strong>5 hand-curated</strong> + <strong>100 LLM-expanded</strong> with <a href="https://arxiv.org/abs/2406.20094">PersonaHub-style</a> negative-example dedup, each with a generated avatar.</p>
-      <pre><code>{"id":"elderly_first_time",
- "archetype":"68yo first-time online tax filer",
- "tech_literacy":"low","patience_steps":15,
- "quirks":["reads every word",
-           "backtracks often",
-           "worried about clicking wrong thing"]}</code></pre>
+      <div class="code-window">
+        <div class="chrome">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="title">configs/personas/seed.jsonl</span>
+          <span class="lang-tag">json</span>
+        </div>
+        <pre class="shiki-pending" data-lang="json"><code>{
+  "id": "elderly_first_time",
+  "archetype": "68yo first-time online tax filer",
+  "tech_literacy": "low",
+  "patience_steps": 15,
+  "quirks": [
+    "reads every word",
+    "backtracks often",
+    "worried about clicking wrong thing"
+  ]
+}</code></pre>
+      </div>
       <p class="small">Explicit <code>quirks</code> injected into each rollout's system prompt drive measurably different trajectories — ~4× variance in step-count on identical tasks.</p>
     </div>
     <div>
@@ -399,7 +480,13 @@ flowchart LR
       </ul>
     </div>
     <div>
-      <pre><code># coder/loop.py — one iteration
+      <div class="code-window">
+        <div class="chrome">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="title">coder/loop.py</span>
+          <span class="lang-tag">text</span>
+        </div>
+        <pre class="shiki-pending" data-lang="text"><code># coder/loop.py — one iteration
 feedback = load("feedback.json")
 patch = claude_cli.patch(feedback)
 
@@ -409,6 +496,7 @@ if patch.success:
     kubectl rollout → dev-app.usersim.alexkreidler.com
 
 # next MAP iteration targets the new deploy</code></pre>
+      </div>
       <p class="small">The baseline stays untouched for A/B comparison. Iteration N+1 MAP runs target the patched deploy, closing the loop.</p>
     </div>
   </div>
@@ -592,6 +680,42 @@ flowchart LR
     fontFamily: 'Inter, system-ui, sans-serif',
     theme: 'dark'
   });
+
+  import { createHighlighter } from 'https://esm.sh/shiki@1.29.2';
+
+  async function highlightAll() {
+    const blocks = document.querySelectorAll('pre.shiki-pending');
+    if (!blocks.length) return;
+
+    const langs = new Set();
+    blocks.forEach(pre => {
+      const lang = pre.dataset.lang || 'text';
+      langs.add(lang);
+    });
+
+    const highlighter = await createHighlighter({
+      themes: ['tokyo-night'],
+      langs: [...langs],
+    });
+
+    blocks.forEach((pre) => {
+      const lang = pre.dataset.lang || 'text';
+      const code = (pre.querySelector('code')?.textContent || pre.textContent).trim();
+      const html = highlighter.codeToHtml(code, {
+        lang,
+        theme: 'tokyo-night',
+      });
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      const rendered = tmp.querySelector('pre');
+      if (rendered) {
+        rendered.classList.add('shiki');
+        pre.replaceWith(rendered);
+      }
+    });
+  }
+
+  highlightAll().catch(e => console.error('Shiki init failed:', e));
 </script>
 
 <script>
