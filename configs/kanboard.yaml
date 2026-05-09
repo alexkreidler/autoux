@@ -1,0 +1,56 @@
+# Kanboard (open-source Kanban) — admin/admin known creds.
+#
+# Live at http://kanboard.usersim.alexkreidler.com (no SSL).
+# A real-app target with login → dashboard → board navigation. Smaller surface
+# than TaxCaster, no anti-bot, and we can verify success deterministically:
+# after login, Kanboard sets a `?controller=DashboardController` URL and shows
+# a logout link in the chrome.
+#
+# Usage:
+#   uv run python -m usersim debug --config configs/kanboard.yaml \
+#       --persona smoke_persona --task login_and_open_board \
+#       --out runs/kanboard_claude_001 --agent claude
+#
+#   uv run python -m usersim run --config configs/kanboard.yaml \
+#       --out runs/kanboard_iter_001 --agent claude --concurrency 3 --iteration 1
+
+target_url: http://kanboard.usersim.alexkreidler.com
+target_commit: external
+
+# Success criteria — Kanboard's logged-in chrome consistently exposes a
+# logout link with /?controller=AuthController&action=logout. URL pattern
+# is the cheaper check; DOM selector is the backup.
+success_dom: "a[href*='logout'], a[href*='AuthController&action=logout']"
+success_url_pattern: ".*controller=DashboardController.*"
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_and_open_board
+    description: |
+      Log in to Kanboard with username "admin" and password "admin",
+      then navigate to your dashboard.
+
+  - id: create_a_task
+    description: |
+      Log in to Kanboard with username "admin" and password "admin".
+      Then create a new task on any board called "Buy milk" and stop.
+
+personas:
+  - id: smoke_persona
+    archetype: "Simple test user — careful, reads each label, follows instructions"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["follows instructions exactly", "doesn't second-guess"]
+
+  - id: rushed_mobile
+    archetype: "Distracted commuter on phone"
+    tech_literacy: medium
+    patience_steps: 8
+    quirks: ["taps fast", "skims headers", "ignores warnings"]
