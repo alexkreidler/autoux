@@ -245,6 +245,17 @@ class Regression(BaseModel):
     first_seen_iter: int
 
 
+class PersonaSegment(BaseModel):
+    persona_id: str
+    n_attempts: int
+    success_rate: float
+    avg_steps: float
+    avg_tokens: int
+    terminal_reasons: dict[str, int]
+    distinctive_quotes: list[str]
+    distinctive_actions: list[str]
+
+
 # =============================================================================
 # THE CONTRACT WITH THE CODING-AGENT SIDE — DO NOT BREAK
 # =============================================================================
@@ -259,6 +270,9 @@ class Feedback(BaseModel):
     top_friction_clusters: list[FrictionCluster] = []
     regressions_vs_prev: list[Regression] = []
     raw_trajectory_dir: str = Field(description="relative path to per-trajectory JSONL files")
+    by_persona: list[PersonaSegment] = []
+    persona_divergence_score: float = 0.0
+    persona_specific_findings: list[str] = []
 
 
 # =============================================================================
