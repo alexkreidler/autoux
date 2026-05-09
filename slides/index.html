@@ -217,7 +217,7 @@
 <!-- 4b. INFRASTRUCTURE -->
 <section class="slide">
   <h2>Infrastructure</h2>
-  <p class="lead">Self-hosted end-to-end. <strong>K8s cluster of 25 OSS apps</strong> · <strong>B200 GPU on VAST.ai</strong> serving SOTA open-source grounder · <strong>Cloudflare tunnel</strong> for public endpoint.</p>
+  <p class="lead">Self-hosted end-to-end. <strong>K8s cluster — 26 OSS apps deployed, 21 currently green</strong> · <strong>B200 on VAST.ai</strong> serving SOTA open-source grounder · <strong>Cloudflare tunnel</strong> for the public endpoint.</p>
   <div class="topo">
     <div class="box accent-l">
       <div class="label">orchestrator</div>
@@ -234,9 +234,9 @@
     </div>
     <div class="box accent-w full">
       <div class="label">target apps  ·  k8s cluster on alexkreidler.com</div>
-      <div class="title">25 OSS apps · Docker images · Ingress per host</div>
+      <div class="title">26 OSS apps · Docker images · per-host ingress</div>
       <div class="desc">
-        <span class="chip">metabase</span><span class="chip">kanboard</span><span class="chip">nocodb</span><span class="chip">ghost</span><span class="chip">listmonk</span><span class="chip">grafana</span><span class="chip">bookstack</span><span class="chip">appointments</span><span class="chip">nextcloud</span><span class="chip">prestashop</span><span class="chip">invoiceninja</span><span class="chip">twenty</span><span class="chip">plausible</span><span class="chip">chatwoot</span><span class="chip">bagisto</span><span class="chip">mattermost</span><span class="chip">mastodon</span><span class="chip">openproject</span><span class="chip">taiga</span><span class="chip">plane</span><span class="chip">huly</span><span class="chip">discourse</span><span class="chip">opencart</span><span class="chip">spree</span><span class="chip">erpnext</span>
+        <span class="chip">metabase</span><span class="chip">kanboard</span><span class="chip">nocodb</span><span class="chip">listmonk</span><span class="chip">grafana</span><span class="chip">bookstack</span><span class="chip">appointments</span><span class="chip">nextcloud</span><span class="chip">prestashop</span><span class="chip">invoiceninja</span><span class="chip">twenty</span><span class="chip">plausible</span><span class="chip">chatwoot</span><span class="chip">bagisto</span><span class="chip">mattermost</span><span class="chip">mastodon</span><span class="chip">openproject</span><span class="chip">taiga</span><span class="chip">plane</span><span class="chip">huly</span><span class="chip">opencart</span>
       </div>
       <p class="small" style="margin-top:0.4em">Manifests: <a href="https://github.com/alexkreidler/computer-hack/tree/main/infra/k8s">infra/k8s/</a>. Each app in its own namespace; ingress at <code>*.usersim.alexkreidler.com</code>. We control deploys → reward-hacking loop can patch + redeploy.</p>
     </div>
@@ -263,7 +263,7 @@
   <h2>Personas + agents</h2>
   <div class="grid-2">
     <div>
-      <p><strong>24 personas</strong> across age, device, language fluency, tech literacy, prior experience, with explicit <code>quirks</code> injected into each rollout's system prompt. 5 hand-curated + 19 LLM-expanded with <a href="https://arxiv.org/abs/2406.20094">PersonaHub-style</a> negative-example dedup.</p>
+      <p><strong>105 personas</strong> across age, device, language fluency, tech literacy, prior experience, with explicit <code>quirks</code> injected into each rollout's system prompt. <strong>5 hand-curated</strong> + <strong>100 LLM-expanded</strong> with <a href="https://arxiv.org/abs/2406.20094">PersonaHub-style</a> negative-example dedup, each with a generated avatar.</p>
       <pre><code>{"id":"elderly_first_time",
  "archetype":"68yo first-time online tax filer",
  "tech_literacy":"low","patience_steps":15,
@@ -328,12 +328,31 @@ Stage 2 (periodic, every Nth iter) ───── HIDDEN FROM CODER:
   <div class="num">08</div>
 </section>
 
+<!-- 7b. DISTINCTIVE QUOTES -->
+<section class="slide">
+  <h2>The signal in the persona's own voice</h2>
+  <div class="grid-1-2">
+    <div>
+      <p>Stage 1 doesn't just tag failures — it surfaces <strong>what each persona actually said</strong> that no other persona said.</p>
+      <p>Per-persona quote extraction:</p>
+      <ul>
+        <li>Take all reasoning lines from this persona's trajectories</li>
+        <li>Substring-fingerprint each against every other persona's reasoning</li>
+        <li>Keep the longest unique quote per trajectory; rank by length</li>
+      </ul>
+      <p class="small">Drops straight into a PR description, design review, or a coding-agent prompt. Persona voice replaces aggregate statistics.</p>
+    </div>
+    <div class="img-fit"><img src="../demo/persona_quotes.png" alt="distinctive quotes per persona"></div>
+  </div>
+  <div class="num">09</div>
+</section>
+
 <!-- 8. IMPLEMENTATION -->
 <section class="slide">
   <h2>Implementation grounding</h2>
   <div class="grid-2">
     <div>
-      <p><strong>Engine</strong> — 11 modules, ~3k LOC, pyright-clean, Pydantic-validated.</p>
+      <p><strong>Engine</strong> — 23 modules, ~6k LOC (engine only, excluding harness), pyright-clean on our code, Pydantic-validated everywhere.</p>
       <ul>
         <li><a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/schemas.py"><code>schemas.py</code></a> — Persona, Task, App, Action, Step, Trajectory, Feedback</li>
         <li><a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/map/worker.py"><code>map/worker.py</code></a> — async per-cell loop with stuck-detection, retries, replay recording</li>
@@ -342,13 +361,13 @@ Stage 2 (periodic, every Nth iter) ───── HIDDEN FROM CODER:
       </ul>
     </div>
     <div>
-      <p><strong>Apps</strong> — <a href="https://github.com/alexkreidler/computer-hack/blob/main/configs/apps/registry.jsonl">26-app registry</a> of real OSS targets:</p>
-      <p class="small">Metabase · Kanboard · Grafana · BookStack · Mastodon · Mattermost · OpenProject · Taiga · Plane · NocoDB · Listmonk · Nextcloud · PrestaShop · Bagisto · Twenty CRM · Chatwoot · Invoice Ninja · Plausible · Easy!Appointments · Ghost · Discourse · OpenCart · Spree · Huly · ERPNext · Zammad</p>
-      <p>Pydantic-validated; teammate pushes adds, the engine consumes them as first-class data.</p>
+      <p><strong>Apps</strong> — <a href="https://github.com/alexkreidler/computer-hack/blob/main/configs/apps/registry.jsonl">JSONL app registry</a> defines target URLs + tasks + success criteria; runtime <a href="https://github.com/alexkreidler/computer-hack/tree/main/infra/k8s">k8s manifests</a> deploy the apps themselves.</p>
+      <p class="small">Metabase · Kanboard · Grafana · BookStack · Mastodon · Mattermost · OpenProject · Taiga · Plane · NocoDB · Listmonk · Nextcloud · PrestaShop · Bagisto · Twenty CRM · Chatwoot · Invoice Ninja · Plausible · Easy!Appointments · Huly · OpenCart …</p>
+      <p>Both Pydantic-validated; teammate pushes registry adds, the engine consumes them as first-class data.</p>
       <p><strong>Live dashboard</strong> — Next.js + FastAPI, iframes Kernel's <code>browser_live_view_url</code> for real-time grid view (<a href="https://github.com/alexkreidler/computer-hack/tree/main/apps/dashboard"><code>apps/dashboard/</code></a>).</p>
     </div>
   </div>
-  <div class="num">09</div>
+  <div class="num">10</div>
 </section>
 
 <!-- 9. NOVEL -->
@@ -361,7 +380,7 @@ Stage 2 (periodic, every Nth iter) ───── HIDDEN FROM CODER:
     <li><strong>Provider-agnostic agent comparison.</strong> Same trajectory format across <code>northstar</code>, <code>claude</code>, <code>surfer</code>; agent comparison is one CLI flag.</li>
     <li><strong>End-to-end reproducible.</strong> Apps + personas as Pydantic registries, JSONL trajectories, ffmpeg replay grids, deterministic Stage 1 — every claim re-runnable from <code>git clone</code>.</li>
   </ol>
-  <div class="num">10</div>
+  <div class="num">11</div>
 </section>
 
 <!-- 10. FUTURE -->
@@ -386,7 +405,7 @@ Stage 2 (periodic, every Nth iter) ───── HIDDEN FROM CODER:
       </ul>
     </div>
   </div>
-  <div class="num">11</div>
+  <div class="num">12</div>
 </section>
 
 <!-- 11. THANKS -->
