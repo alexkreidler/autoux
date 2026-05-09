@@ -126,10 +126,35 @@ class SurferSession:
         self._system_prompt = system_prompt
         self._temperature = temperature
 
+        # Strip a one-line persona reminder out of the system prompt so we
+        # can re-inject it every few turns. The system prompt's "Who You Are"
+        # block can run ~150 words and decays from attention quickly; a short
+        # mid-trajectory nudge keeps Claude in character.
+        self._persona_reminder = self._distill_persona(system_prompt)
+
         self._messages: list[dict[str, Any]] = []
         self._circuit_breaker = CircuitBreaker(config.circuit_breaker_threshold)
         self._step_num = 0
         self._budget_warning_sent = False
+
+    @staticmethod
+    def _distill_persona(system_prompt: str) -> str:
+        """Pull the persona section out of the system prompt for re-injection.
+        Falls back to a generic reminder if the prompt doesn't contain it."""
+        lines = system_prompt.splitlines()
+        # Find content between "# Who You Are" and the first blank-then-prefix.
+        out: list[str] = []
+        in_block = False
+        for line in lines:
+            if line.startswith("# Who You Are"):
+                in_block = True
+                continue
+            if in_block and line.startswith("## "):
+                break
+            if in_block:
+                out.append(line)
+        body = "\n".join(out).strip()
+        return body if body else "(stay in character as the persona above)"
 
     @staticmethod
     def _extract_b64(obs: Observation) -> str:
@@ -169,6 +194,20 @@ class SurferSession:
     async def step(self, observation: Observation) -> AgentResponse:
         self._step_num += 1
         img_b64 = self._extract_b64(observation)
+
+        # Persona reminder — re-inject every 4 turns so Claude doesn't decay
+        # back into "browser automation agent" mode after the system prompt
+        # falls out of attention. Skip on turn 1 (system prompt is fresh).
+        if self._step_num > 1 and (self._step_num - 1) % 4 == 0:
+            self._messages.append({
+                "role": "user",
+                "content": (
+                    "Reminder — stay in character. You are simulating this user:\n\n"
+                    f"{self._persona_reminder}\n\n"
+                    "Behave like THIS person, not like a maximally efficient agent. "
+                    "Their quirks, patience, and tech literacy should drive your next action."
+                ),
+            })
 
         # Budget warning
         max_steps = self._config.max_steps

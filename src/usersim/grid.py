@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import json
 import math
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -179,7 +178,7 @@ def compose_tiered_grid(
     cell_w: int = CELL_W,
     cell_h: int = CELL_H,
     chunk: int = TIER_CHUNK,
-    parallel: int = 4,
+    parallel: int = 8,
 ) -> Path:
     """Two-tier encode for large N.
 
@@ -199,17 +198,26 @@ def compose_tiered_grid(
         tmp_root = Path(tmp)
         sub_paths = [tmp_root / f"sub_{i:03d}.mp4" for i in range(len(chunks))]
 
-        def _encode(i_chunk_path):
-            i, chunk_videos, sub_path = i_chunk_path
+        def _encode(args):
+            chunk_videos, sub_path = args
             return compose_grid(chunk_videos, sub_path, cell_w, cell_h)
 
         with ThreadPoolExecutor(max_workers=parallel) as ex:
-            list(ex.map(_encode, [(i, c, sub_paths[i]) for i, c in enumerate(chunks)]))
+            list(ex.map(_encode, [(c, sub_paths[i]) for i, c in enumerate(chunks)]))
 
+        # Meta-cell must be SCALED DOWN from the sub-grid output, otherwise the
+        # meta-canvas explodes past the fast-path threshold. Halving keeps both
+        # tiers within the videotoolbox fast lane (and yields a final
+        # per-rollout pixel size of ~240x150 which is fine for postage-stamp
+        # grids — at this N you can't see fine detail anyway).
         sub_cols, sub_rows = grid_layout(chunk)
-        meta_cell_w = sub_cols * cell_w
-        meta_cell_h = sub_rows * cell_h
-        print(f"  tier2: {len(chunks)} sub-grids → meta-grid (cell {meta_cell_w}x{meta_cell_h})")
+        meta_cell_w = (sub_cols * cell_w) // 2
+        meta_cell_h = (sub_rows * cell_h) // 2
+        meta_cols, meta_rows = grid_layout(len(chunks))
+        canvas_mpx = (meta_cols * meta_cell_w * meta_rows * meta_cell_h) / 1_000_000
+        print(f"  tier2: {len(chunks)} sub-grids → meta-grid "
+              f"({meta_cell_w}x{meta_cell_h} cells, {meta_cols}x{meta_rows}, "
+              f"{canvas_mpx:.1f} Mpx canvas)")
         compose_grid(sub_paths, out, meta_cell_w, meta_cell_h)
     return out
 
