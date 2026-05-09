@@ -44,6 +44,8 @@ replays/
 trajectories/
 **/trajectories/
 *.mp4
+# but DO track the cinematic intro used in the slides
+!demo/cinematic_intro.mp4
 *.webm
 **/active.json
 **/registry.json
@@ -69,7 +71,11 @@ Thumbs.db
 # committed reference data (cheap to track, expensive to regenerate).
 # Old generations live under avatars_v* and are not committed.
 configs/personas/avatars_v*/
-demo/
 
 # slide exports (regenerated)
 slides/exports/
+slides/dist/
+
+# build artifacts and node_modules under demo/
+demo/node_modules/
+demo/mega2.gif

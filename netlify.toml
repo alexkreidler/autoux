@@ -1,0 +1,15 @@
+# Netlify config: publish the self-contained dist built by `slides/build.py`.
+
+[build]
+  publish = "slides/dist"
+  command = "uv run python slides/build.py"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/demo/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, immutable"

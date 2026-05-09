@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #F5F0E6;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+#scene {
+  width: 1920px;
+  height: 1080px;
+  position: relative;
+  overflow: hidden;
+}
+#camera {
+  position: absolute;
+  top: 0; left: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  transform: scale(5) translate(-720.0px, -378.0px);
+}
+.cell {
+  position: absolute;
+  border: 1px solid #D4CFC4;
+  overflow: hidden;
+}
+.cell.focal {
+  border: 2px solid #8B7355;
+  z-index: 10;
+}
+.avatar {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  z-index: 20;
+  border: 1px solid rgba(255,255,255,0.6);
+}
+#title {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #1A1A1A;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  z-index: 100;
+  width: 100%;
+}
+#overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #F5F0E6;
+  opacity: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div id="camera">
+    <div class="cell" style="left:0px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/bilingual_parent_translating__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:96px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/college_senior_first_refund__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:192px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/community_college_student_worker__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:288px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/construction_worker_paystub__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:384px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/detail_oriented_accountant__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:480px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/elderly_first_time__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:576px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/esl_speaker__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell" style="left:672px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/executive_assistant_proxy__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:768px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/freelance_designer_multitasker__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:864px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/gig_worker_between_jobs__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:960px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/impatient_dad__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/lunch_break_manager__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/military_spouse_relocator__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/night_shift_nurse__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/power_user_skeptic__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/public_library_user__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/recent_immigrant_applicant__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/executive_assistant_proxy__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/rural_low_bandwidth_user__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:0px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/rushed_mobile__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:0px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/seasonal_worker_shared_phone__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:96px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/self_employed_consultant__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:192px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/small_business_owner_evening__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:288px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/tablet_using_caregiver__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:384px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/young_retail_employee__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+    <div class="cell" style="left:480px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/bilingual_parent_translating__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:576px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/college_senior_first_refund__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:672px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/community_college_student_worker__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:768px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/construction_worker_paystub__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:864px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/detail_oriented_accountant__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:960px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/elderly_first_time__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/esl_speaker__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/executive_assistant_proxy__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/freelance_designer_multitasker__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/gig_worker_between_jobs__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/impatient_dad__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/lunch_break_manager__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/military_spouse_relocator__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/night_shift_nurse__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:108px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/power_user_skeptic__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:0px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/public_library_user__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:96px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/recent_immigrant_applicant__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:192px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/retired_professional_cautious__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:288px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/rural_low_bandwidth_user__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:384px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/rushed_mobile__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:480px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/seasonal_worker_shared_phone__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:576px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/self_employed_consultant__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:672px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/small_business_owner_evening__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:768px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/tablet_using_caregiver__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:864px;top:216px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/discourse_browse/thumbnails/young_retail_employee__read_one_topic/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+    <div class="cell" style="left:960px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:216px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:0px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:96px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:192px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:288px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:384px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:480px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:576px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:672px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:768px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:864px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:960px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:324px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:324px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/bilingual_parent_translating__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:324px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/bilingual_parent_translating__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:324px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/college_senior_first_refund__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:324px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/college_senior_first_refund__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:324px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/community_college_student_worker__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:0px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/community_college_student_worker__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:96px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/construction_worker_paystub__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:192px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/construction_worker_paystub__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:288px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/detail_oriented_accountant__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:384px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/detail_oriented_accountant__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:480px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/elderly_first_time__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:576px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/elderly_first_time__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:672px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/esl_speaker__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell" style="left:768px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/esl_speaker__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell focal" style="left:864px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/bookstack_explore/thumbnails/retired_professional_cautious__find_useful_page/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:960px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/executive_assistant_proxy__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/freelance_designer_multitasker__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/freelance_designer_multitasker__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/gig_worker_between_jobs__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/gig_worker_between_jobs__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/impatient_dad__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/impatient_dad__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/lunch_break_manager__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/lunch_break_manager__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:432px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/military_spouse_relocator__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:0px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/military_spouse_relocator__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:96px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/night_shift_nurse__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:192px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/night_shift_nurse__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:288px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/power_user_skeptic__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:384px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/power_user_skeptic__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:480px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/public_library_user__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:576px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/public_library_user__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:672px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/recent_immigrant_applicant__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:768px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/recent_immigrant_applicant__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:864px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/retired_professional_cautious__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:960px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/retired_professional_cautious__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/rural_low_bandwidth_user__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/rural_low_bandwidth_user__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/rushed_mobile__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/rushed_mobile__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/seasonal_worker_shared_phone__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/seasonal_worker_shared_phone__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/self_employed_consultant__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/self_employed_consultant__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:540px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/small_business_owner_evening__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:0px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/small_business_owner_evening__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:96px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/tablet_using_caregiver__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:192px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/tablet_using_caregiver__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:288px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/young_retail_employee__browse_and_pick_one/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+    <div class="cell" style="left:384px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/mastodon_browse/thumbnails/young_retail_employee__explore_three/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+    <div class="cell" style="left:480px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/bilingual_parent_translating__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:576px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/bilingual_parent_translating__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:672px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/college_senior_first_refund__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:768px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/college_senior_first_refund__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:864px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/community_college_student_worker__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:960px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/community_college_student_worker__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/construction_worker_paystub__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/construction_worker_paystub__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/detail_oriented_accountant__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/detail_oriented_accountant__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/elderly_first_time__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/elderly_first_time__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/esl_speaker__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/esl_speaker__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:648px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/executive_assistant_proxy__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:0px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/executive_assistant_proxy__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:96px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/freelance_designer_multitasker__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:192px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/freelance_designer_multitasker__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:288px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/gig_worker_between_jobs__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:384px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/gig_worker_between_jobs__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:480px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/impatient_dad__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:576px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/impatient_dad__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:672px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/lunch_break_manager__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:768px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/lunch_break_manager__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:864px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/military_spouse_relocator__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:960px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/military_spouse_relocator__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/night_shift_nurse__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/night_shift_nurse__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/power_user_skeptic__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/power_user_skeptic__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/public_library_user__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:756px;width:96px;height:108px;background-color: #2a2a2a;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/recent_immigrant_applicant__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/recent_immigrant_applicant__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:756px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/retired_professional_cautious__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:0px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/retired_professional_cautious__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:96px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/rural_low_bandwidth_user__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:192px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/rural_low_bandwidth_user__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:288px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/rushed_mobile__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:384px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/rushed_mobile__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:480px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/seasonal_worker_shared_phone__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:576px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/seasonal_worker_shared_phone__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:672px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/self_employed_consultant__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:768px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/self_employed_consultant__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:864px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/small_business_owner_evening__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:960px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/small_business_owner_evening__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/tablet_using_caregiver__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/tablet_using_caregiver__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/young_retail_employee__compare_two/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/opencart_shop/thumbnails/young_retail_employee__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/bilingual_parent_translating__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/bilingual_parent_translating.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/college_senior_first_refund__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/college_senior_first_refund.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/community_college_student_worker__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/community_college_student_worker.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/construction_worker_paystub__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/construction_worker_paystub.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:864px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/detail_oriented_accountant__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/detail_oriented_accountant.png" />
+    </div>
+    <div class="cell" style="left:0px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/elderly_first_time__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/elderly_first_time.png" />
+    </div>
+    <div class="cell" style="left:96px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/esl_speaker__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/esl_speaker.png" />
+    </div>
+    <div class="cell" style="left:192px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/executive_assistant_proxy__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/executive_assistant_proxy.png" />
+    </div>
+    <div class="cell" style="left:288px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/freelance_designer_multitasker__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/freelance_designer_multitasker.png" />
+    </div>
+    <div class="cell" style="left:384px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/gig_worker_between_jobs__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/gig_worker_between_jobs.png" />
+    </div>
+    <div class="cell" style="left:480px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/impatient_dad__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/impatient_dad.png" />
+    </div>
+    <div class="cell" style="left:576px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/lunch_break_manager__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/lunch_break_manager.png" />
+    </div>
+    <div class="cell" style="left:672px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/military_spouse_relocator__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/military_spouse_relocator.png" />
+    </div>
+    <div class="cell" style="left:768px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/night_shift_nurse__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/night_shift_nurse.png" />
+    </div>
+    <div class="cell" style="left:864px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/power_user_skeptic__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/power_user_skeptic.png" />
+    </div>
+    <div class="cell" style="left:960px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/public_library_user__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/public_library_user.png" />
+    </div>
+    <div class="cell" style="left:1056px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/recent_immigrant_applicant__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/recent_immigrant_applicant.png" />
+    </div>
+    <div class="cell" style="left:1152px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/retired_professional_cautious__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/retired_professional_cautious.png" />
+    </div>
+    <div class="cell" style="left:1248px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/rural_low_bandwidth_user__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rural_low_bandwidth_user.png" />
+    </div>
+    <div class="cell" style="left:1344px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/rushed_mobile__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/rushed_mobile.png" />
+    </div>
+    <div class="cell" style="left:1440px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/seasonal_worker_shared_phone__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/seasonal_worker_shared_phone.png" />
+    </div>
+    <div class="cell" style="left:1536px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/self_employed_consultant__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/self_employed_consultant.png" />
+    </div>
+    <div class="cell" style="left:1632px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/small_business_owner_evening__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/small_business_owner_evening.png" />
+    </div>
+    <div class="cell" style="left:1728px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/tablet_using_caregiver__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/tablet_using_caregiver.png" />
+    </div>
+    <div class="cell" style="left:1824px;top:972px;width:96px;height:108px;background-color: #2a2a2a; background-image: url('file:///Users/davidbai/Desktop/cua-hackathon/runs/mega2_20260509_150853/spree_browse/thumbnails/young_retail_employee__find_one_to_buy/step_00.jpg'); background-size: cover; background-position: top left;">
+      <img class="avatar" src="file:///Users/davidbai/Desktop/cua-hackathon/configs/personas/avatars/young_retail_employee.png" />
+    </div>
+  </div>
+  <div id="title"><span style="display:block;font-size:180px;font-weight:700;letter-spacing:-0.02em;line-height:0.95;">AutoUX</span><span style="display:block;font-size:32px;font-weight:300;letter-spacing:0.06em;margin-top:18px;color:#4a4a4a;">a CUA UserSim · Kreidler &amp; Bai</span></div>
+  <div id="overlay"></div>
+</div>
+<script>
+// Animation state
+const FPS = 30;
+const TOTAL_FRAMES = 270; // 9s × 30fps
+
+// Key animation values
+const SCALE_START = 5;
+const TX_START = -3600.0;  // absolute translate at scale=5
+const TY_START = -1890.0;
+
+// GSAP-style cubic bezier easing
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+const camera = document.getElementById('camera');
+const title = document.getElementById('title');
+const overlay = document.getElementById('overlay');
+
+let currentFrame = 0;
+let animating = false;
+
+function setFrame(frame) {
+  const t = frame / FPS;  // time in seconds
+  
+  // Phase 1: 0-1.5s — hold at scale 5 on focal cell
+  // Phase 2: 1.5-6.5s — zoom out to scale 1
+  // Phase 3: 6.5-8.5s — title fades in
+  // Phase 4: 8.5-9.0s — fade to cream
+  
+  let scale, tx, ty;
+  
+  if (t <= 1.5) {
+    // Hold with small pulse at t=0.75
+    const pulse = 1 + 0.05 * Math.sin(t * Math.PI / 1.5 * 2);
+    scale = SCALE_START * pulse;
+    tx = TX_START;
+    ty = TY_START;
+  } else if (t <= 6.5) {
+    // Zoom out
+    const progress = (t - 1.5) / 5.0;
+    const eased = easeInOutCubic(progress);
+    scale = lerp(SCALE_START, 1.0, eased);
+    tx = lerp(TX_START, 0, eased);
+    ty = lerp(TY_START, 0, eased);
+  } else {
+    scale = 1.0;
+    tx = 0;
+    ty = 0;
+  }
+  
+  camera.style.transform = `scale(${scale}) translate(${tx/scale}px, ${ty/scale}px)`;
+  
+  // Title fade in: 6.5s - 8.0s
+  if (t <= 6.5) {
+    title.style.opacity = 0;
+  } else if (t <= 8.0) {
+    title.style.opacity = (t - 6.5) / 1.5;
+  } else {
+    title.style.opacity = 1;
+  }
+  
+  // Final fade: 8.5 - 9.0s
+  if (t <= 8.5) {
+    overlay.style.opacity = 0;
+  } else {
+    overlay.style.opacity = (t - 8.5) / 0.5;
+  }
+}
+
+// Expose for puppeteer-driven capture
+window.TOTAL_FRAMES = TOTAL_FRAMES;
+window.setFrame = setFrame;
+window.animationReady = true;
+
+// Initialize to frame 0
+setFrame(0);
+</script>
+</body>
+</html>
