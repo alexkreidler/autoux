@@ -91,6 +91,11 @@ def main() -> None:
         "-map", "[out]",
         "-c:v", "libx264", "-preset", "fast", "-crf", "23",
         "-pix_fmt", "yuv420p",
+        # QuickTime-friendly: high profile + level 4.0, moov at front for
+        # streaming/partial-read tolerance, constant 30fps to avoid VFR sync.
+        "-profile:v", "high", "-level", "4.0",
+        "-r", "30",
+        "-movflags", "+faststart",
         "-shortest",
         str(out),
     ]
