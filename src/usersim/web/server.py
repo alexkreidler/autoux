@@ -183,6 +183,20 @@ def _spawn_run(req: RunRequest) -> RunInfo:
                 r.returncode = rc
                 r.ended_at = time.time()
                 r.status = "done" if rc == 0 else "failed"
+        # Auto-compose grid.mp4 from per-persona replays. Best-effort —
+        # don't change run status if this fails.
+        if rc == 0:
+            try:
+                grid_proc = subprocess.run(
+                    [sys.executable, "-m", "usersim.grid", str(out_dir)],
+                    cwd=str(_project_root()),
+                    capture_output=True,
+                    timeout=120,
+                )
+                if grid_proc.returncode != 0:
+                    print(f"[run {info.id}] grid compose failed: {grid_proc.stderr.decode()[:200]}")
+            except Exception as e:
+                print(f"[run {info.id}] grid compose exception: {e}")
 
     threading.Thread(target=_watch, daemon=True).start()
     return info
@@ -313,6 +327,19 @@ def run_status(run_id: str) -> RunInfo:
 def runs_list() -> list[RunInfo]:
     with _RUNS_LOCK:
         return sorted(_RUNS.values(), key=lambda r: r.started_at, reverse=True)
+
+
+@app.get("/api/run/{run_id}/grid")
+def run_grid(run_id: str):
+    """Serve the auto-composed grid.mp4 for a completed run."""
+    with _RUNS_LOCK:
+        info = _RUNS.get(run_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="run not found")
+    p = Path(info.out_dir) / "grid.mp4"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="grid not ready (still composing or run failed)")
+    return FileResponse(p, media_type="video/mp4", filename=f"{run_id}_grid.mp4")
 
 
 @app.get("/api/stream")

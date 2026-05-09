@@ -62,17 +62,20 @@ export default function Cell({ session: s, persona }: Props) {
         </span>
       </div>
 
-      {/* iframe (or idle avatar). Takes the rest of the cell at 16:10. */}
+      {/* iframe at the cell's natural 16:10. Don't flex-1 — that stretches
+          the iframe element past Kernel's actual viewport and produces black
+          letterboxing around a tiny rendered page. */}
       {s.live_view_url ? (
         <iframe
           src={s.live_view_url}
-          className="w-full flex-1 border-0 bg-cream"
+          className="w-full border-0 bg-cream"
+          style={{ aspectRatio: "16/10" }}
           sandbox="allow-scripts allow-same-origin"
           allow="clipboard-read; clipboard-write"
           title={`session ${s.browser_session_id}`}
         />
       ) : (
-        <div className="w-full flex-1 bg-cream flex items-center justify-center">
+        <div className="w-full bg-cream flex items-center justify-center" style={{ aspectRatio: "16/10" }}>
           <AvatarChip personaId={s.persona_id} size={64} />
         </div>
       )}
