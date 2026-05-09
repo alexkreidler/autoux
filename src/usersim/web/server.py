@@ -221,6 +221,63 @@ app.add_middleware(
 )
 
 
+# ---------------------------------------------------------------------------
+# Heartbeat-based registry pruner
+#
+# Worker.update() stamps last_step_at on every turn. If a row's heartbeat is
+# older than STALE_S, the parent process is almost certainly dead — prune
+# the registry row and reap the matching kernel browser session.
+# ---------------------------------------------------------------------------
+PRUNE_INTERVAL_S = 5
+STALE_S = 45              # rows older than this with no update → prune
+NEVER_STARTED_S = 30      # turn==0 ghost — parent died before first action
+
+
+def _prune_registry_once() -> int:
+    """Returns count of rows pruned. Called from background loop + on startup."""
+    from datetime import datetime as _dt
+    pruned = 0
+    try:
+        rows = registry.list_active()
+    except Exception:
+        return 0
+    now = _dt.now()
+    for r in rows:
+        try:
+            age = (now - r.last_step_at).total_seconds()
+        except Exception:
+            age = 0
+        is_stale = age > STALE_S
+        is_ghost = r.current_turn == 0 and age > NEVER_STARTED_S
+        if is_stale or is_ghost:
+            try:
+                registry.remove(r.browser_session_id)
+                pruned += 1
+            except Exception:
+                continue
+            # Best-effort: kill the kernel browser too.
+            try:
+                from kernel import Kernel
+                client = Kernel(api_key=os.environ.get("KERNEL_API_KEY", ""))
+                client.browsers.delete_by_id(r.browser_session_id)
+            except Exception:
+                pass
+    return pruned
+
+
+@app.on_event("startup")
+async def _start_pruner() -> None:
+    async def _loop():
+        while True:
+            await asyncio.sleep(PRUNE_INTERVAL_S)
+            n = await asyncio.to_thread(_prune_registry_once)
+            if n > 0:
+                print(f"[pruner] removed {n} stale registry rows")
+    # Single shot on startup to clear any leftovers from prior process.
+    await asyncio.to_thread(_prune_registry_once)
+    asyncio.create_task(_loop())
+
+
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
     return INDEX.read_text()

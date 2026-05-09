@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from threading import Lock
 
@@ -50,6 +51,9 @@ def add(rollout: ActiveRollout) -> None:
 
 
 def update(session_id: str, **patch) -> None:
+    # Stamp heartbeat on every update — prune-loop uses this to detect
+    # rows whose parent process died (no longer calling update()).
+    patch.setdefault("last_step_at", datetime.now().isoformat())
     with _LOCK:
         rows = _read()
         for row in rows:

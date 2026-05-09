@@ -292,3 +292,7 @@ class ActiveRollout(BaseModel):
 
     # live verdict (flips when grader detects success/abandonment)
     stage1_status: Literal["running", "success_dom", "success_url", "abandoned", "stuck", "error"] = "running"
+
+    # heartbeat — registry.update() stamps this on every patch. Prune-loop
+    # uses it to spot ghost rows whose parent process died without cleanup.
+    last_step_at: datetime = Field(default_factory=datetime.now)
