@@ -44,8 +44,9 @@ replays/
 trajectories/
 **/trajectories/
 *.mp4
-# but DO track the cinematic intro used in the slides
+# but DO track committed demo / readme assets
 !demo/cinematic_intro.mp4
+!docs/screenshots/*.mp4
 *.webm
 **/active.json
 **/registry.json
