@@ -63,7 +63,8 @@ Single `.env` at repo root with `TZAFON_API_KEY` and `KERNEL_API_KEY`:
 # smoke test (cheap, ~10s) — example.com end-to-end
 uv run python -m usersim run --config configs/smoke.yaml --out runs/smoke --concurrency 1
 
-# real iteration — TaxCaster, all personas × all tasks
+# full iteration against an example target (configs/taxcaster.yaml is the
+# bundled demo config — point it at your own app for real use)
 uv run python -m usersim run --config configs/taxcaster.yaml --out runs/iter_001 --iteration 1
 
 # single (persona, task) spike, verbose
@@ -131,8 +132,8 @@ cua-hackathon/                # repo root
 │   └── coder/                #   CODING-AGENT HALF (claude-cli wrapper, swappable)
 │
 ├── configs/                  # shared declarative config
-│   ├── smoke.yaml            #   example.com smoke (free, fast)
-│   ├── taxcaster.yaml        #   real target (TurboTax TaxCaster)
+│   ├── smoke.yaml            #   example.com smoke target (free, fast)
+│   ├── taxcaster.yaml        #   demo target (TaxCaster — public refund estimator)
 │   └── personas/
 │       ├── seed.jsonl        #   5 hand-curated archetypes
 │       ├── expanded.jsonl    #   24 LLM-expanded personas
@@ -197,33 +198,3 @@ cua-hackathon/                # repo root
   the impl files (`clients/northstar.py`, `browsers/kernel.py`). The map
   step + reduce step never reach into a provider SDK.
 
----
-
-## State of the world (May 2026)
-
-Engine is end-to-end clean: 3,040 LOC, 0 pyright errors, 0 TODO/FIXME.
-- ✅ Map: async worker, retry inside client, replay recording, registry
-- ✅ Reduce: Stage 1 grader, 6 pattern detectors, HDBSCAN residual,
-     Feedback contract verified roundtrip
-- ✅ Coder: `src/coder/` reads feedback.json, drives Claude CLI, commits
-- ⚠️ Stage 2 held-out judge: stubbed (`grade_stage2_heldout` returns None)
-- ⚠️ Persona expansion: 5 hand-written + LLM-expansion code in
-     `usersim/personas/expand.py`; not wired into the default flow
-- ⚠️ Live dashboard: `usersim/web/` works but has been deprioritized
-- ❌ HDBSCAN residual still uses TF-IDF; production swap to OpenAI
-     `text-embedding-3-small` pending budget
-- ❌ Process-level lock on `runs/active.json` not implemented
-     (single-process runs only for now — see `CODE_QUALITY.md` O6)
-
----
-
-## Running into trouble?
-
-- Engine imports fine, pyright complains in editor → editor pyright cache is
-  stale; `uv run pyright src/usersim` is the source of truth.
-- Kernel session leak after a crash → `kernel.browsers.list()` to inspect;
-  there's no reaper script yet (see `CODE_QUALITY.md`).
-- Tzafon 429s under concurrency=20+ → already retried inside
-  `NorthstarClient` with exp backoff; if persistent, drop to 10 and revisit.
-- Feedback.json validation fails → schema change without sync; recheck
-  `Feedback` in `schemas.py` against what `src/coder/` expects.
