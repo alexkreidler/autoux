@@ -1,0 +1,68 @@
+# =====================================================================
+# AutoUX monorepo .gitignore
+# =====================================================================
+
+# --- Secrets ---------------------------------------------------------
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# --- Python ----------------------------------------------------------
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# --- Node / Next.js --------------------------------------------------
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+**/out/
+.turbo/
+**/.turbo/
+.pnpm-store/
+*.tsbuildinfo
+
+# --- Runtime outputs (NEVER commit) ----------------------------------
+runs/
+**/runs/
+replays/
+**/replays/
+trajectories/
+**/trajectories/
+*.mp4
+*.webm
+**/active.json
+**/registry.json
+*.log
+.tmp/
+
+# --- Archived / dead code -------------------------------------------
+archive/
+
+# --- Editor / OS -----------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Avatars ---------------------------------------------------------
+# We KEEP the canonical avatar set under configs/personas/avatars/ as
+# committed reference data (cheap to track, expensive to regenerate).
+# Old generations live under avatars_v* and are not committed.
+configs/personas/avatars_v*/

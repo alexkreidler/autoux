@@ -1,0 +1,20 @@
+target_url: https://example.com
+target_commit: smoke
+success_dom: "h1"
+success_url_pattern: null
+
+tasks:
+  - id: example_h1
+    description: "Read the H1 on this page and stop."
+
+personas:
+  - id: smoke_persona
+    archetype: "Simple test user"
+    tech_literacy: medium
+    patience_steps: 5
+    quirks: []
+
+max_turns: 5
+viewport:
+  width: 1280
+  height: 800

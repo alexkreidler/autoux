@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #F5F0E6;
+  --color-ink: #1A1A1A;
+  --color-ink-soft: #4a4a4a;
+  --color-muted: #918B7C;
+  --color-line: #D6CFBF;
+  --color-line-soft: #E8E2D3;
+  --color-olive: #B5A368;
+  --color-sage: #8FA37C;
+  --color-clay: #C19A6B;
+  --color-rust: #A8624A;
+  --color-amber: #C29440;
+  --color-tan: #D4A574;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Inter", sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* tabular numbers for metric displays */
+.tnum {
+  font-feature-settings: "tnum" 1;
+}

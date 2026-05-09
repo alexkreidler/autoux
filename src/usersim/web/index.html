@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>autoux — live rollouts</title>
+<style>
+  :root {
+    --bg:        #F5F0E6;   /* cream paper */
+    --ink:       #1A1A1A;
+    --ink-soft:  #4a4a4a;
+    --muted:     #918B7C;
+    --line:      #D6CFBF;
+    --line-soft: #E8E2D3;
+    --olive:     #B5A368;
+    --sage:      #8FA37C;
+    --clay:      #C19A6B;
+    --rust:      #A8624A;
+    --amber:     #C29440;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 28px; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+
+  header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 18px;
+  }
+  h1 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.01em; text-transform: lowercase; }
+  h1 .dot { display: inline-block; width: 8px; height: 8px; background: var(--olive);
+            border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  #count { color: var(--muted); font-size: 13px; }
+
+  /* metric bar */
+  #metrics {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+    border: 1px solid var(--line); background: white;
+    margin-bottom: 22px;
+  }
+  .metric { padding: 14px 18px; border-right: 1px solid var(--line-soft); }
+  .metric:last-child { border-right: 0; }
+  .metric .label { font-size: 11px; color: var(--muted); text-transform: lowercase;
+                    letter-spacing: .05em; margin-bottom: 4px; }
+  .metric .value { font-size: 22px; font-weight: 500; letter-spacing: -.02em;
+                    font-feature-settings: "tnum" 1; }
+  .metric.delta .value.bad  { color: var(--rust); }
+  .metric.delta .value.good { color: var(--sage); }
+  .metric .sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* grid */
+  #grid {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  }
+
+  .cell {
+    background: white; border: 1px solid var(--line); overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: border-color .15s;
+  }
+  .cell.status-running      { border-color: var(--line); }
+  .cell.status-success_dom,
+  .cell.status-success_url  { border-color: var(--sage); }
+  .cell.status-stuck        { border-color: var(--amber); }
+  .cell.status-abandoned,
+  .cell.status-error        { border-color: var(--rust); }
+
+  .top-strip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-bottom: 1px solid var(--line-soft);
+    background: var(--bg);
+  }
+  .avatar {
+    width: 36px; height: 36px; flex-shrink: 0;
+    background: var(--line); display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 12px; color: white;
+    overflow: hidden;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .who { flex: 1; min-width: 0; }
+  .name { font-size: 13px; font-weight: 500; color: var(--ink);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          text-transform: lowercase; }
+  .meta { font-size: 11px; color: var(--muted); margin-top: 1px;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px; font-size: 10px; font-weight: 600;
+    text-transform: lowercase; letter-spacing: .05em;
+    border: 1px solid var(--line);
+  }
+  .badge.running     { color: var(--ink-soft); background: white; }
+  .badge.success_dom,
+  .badge.success_url { color: white; background: var(--sage); border-color: var(--sage); }
+  .badge.stuck       { color: white; background: var(--amber); border-color: var(--amber); }
+  .badge.abandoned,
+  .badge.error       { color: white; background: var(--rust); border-color: var(--rust); }
+
+  .cell iframe { width: 100%; aspect-ratio: 16 / 10; border: 0; background: var(--bg); }
+
+  .bottom-strip {
+    padding: 10px 12px; border-top: 1px solid var(--line-soft); font-size: 11px;
+  }
+  .row1 {
+    display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px;
+    color: var(--muted); font-feature-settings: "tnum" 1;
+  }
+  .turn-info { color: var(--ink-soft); font-family: ui-monospace, SFMono-Regular, monospace; }
+  .reasoning {
+    color: var(--ink-soft); font-style: italic;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  #empty {
+    color: var(--muted); padding: 60px; text-align: center;
+    border: 1px dashed var(--line); background: white;
+    text-transform: lowercase;
+  }
+
+  /* avatar fallback color rotation */
+  .avatar.c0 { background: var(--olive); }
+  .avatar.c1 { background: var(--sage); }
+  .avatar.c2 { background: var(--clay); }
+  .avatar.c3 { background: var(--rust); }
+  .avatar.c4 { background: var(--amber); }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot"></span>autoux · live rollouts</h1>
+  <span id="count">0 active</span>
+</header>
+
+<div id="metrics">
+  <div class="metric"><div class="label">iteration</div><div class="value" id="m-iter">—</div></div>
+  <div class="metric"><div class="label">gameable</div><div class="value" id="m-gameable">—</div></div>
+  <div class="metric"><div class="label">held-out</div><div class="value" id="m-heldout">—</div></div>
+  <div class="metric delta"><div class="label">δ hack</div><div class="value" id="m-delta">—</div><div class="sub">gameable − held-out</div></div>
+  <div class="metric"><div class="label">abandoned</div><div class="value" id="m-abandon">—</div></div>
+</div>
+
+<div id="grid"></div>
+<div id="empty">no active rollouts.</div>
+
+<script>
+const grid = document.getElementById("grid");
+const countEl = document.getElementById("count");
+const emptyEl = document.getElementById("empty");
+
+let PERSONAS = {};
+
+function truncate(s, n) {
+  if (!s) return "";
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
+function actionLabel(action) {
+  if (!action) return "";
+  const args = action.args || {};
+  if (action.type === "click" || action.type === "double_click")
+    return `${action.type}(${args.x},${args.y})`;
+  if (action.type === "type")
+    return `type("${truncate(args.text, 20)}")`;
+  if (action.type === "scroll")
+    return `scroll(${args.x},${args.y} Δ${args.scroll_x},${args.scroll_y})`;
+  if (action.type === "keypress")
+    return `keypress(${(args.keys||[]).join("+")})`;
+  return `${action.type}(${JSON.stringify(args).slice(0, 40)})`;
+}
+
+function initials(s) {
+  if (!s) return "?";
+  return s.split(/[\s_-]+/).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
+}
+
+function colorClass(s) {
+  if (!s) return "c0";
+  let h = 0;
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return "c" + (Math.abs(h) % 5);
+}
+
+function render(sessions) {
+  countEl.textContent = `${sessions.length} active`;
+  emptyEl.style.display = sessions.length ? "none" : "block";
+
+  const seen = new Set(sessions.map(s => s.browser_session_id));
+  for (const cell of [...grid.children]) {
+    if (!seen.has(cell.dataset.sid)) cell.remove();
+  }
+
+  for (const s of sessions) {
+    let cell = grid.querySelector(`[data-sid="${s.browser_session_id}"]`);
+    if (!cell) {
+      cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.sid = s.browser_session_id;
+      cell.innerHTML = `
+        <div class="top-strip">
+          <div class="avatar ${colorClass(s.persona_id)}"></div>
+          <div class="who">
+            <div class="name"></div>
+            <div class="meta"></div>
+          </div>
+          <span class="badge running"></span>
+        </div>
+        <iframe allow="clipboard-read; clipboard-write" sandbox="allow-scripts allow-same-origin"></iframe>
+        <div class="bottom-strip">
+          <div class="row1">
+            <span class="turn-info"></span>
+            <span class="tokens"></span>
+          </div>
+          <div class="reasoning"></div>
+        </div>`;
+      if (s.live_view_url) cell.querySelector("iframe").src = s.live_view_url;
+
+      // avatar: try /api/avatar/{persona_id}; fallback to initials
+      const av = cell.querySelector(".avatar");
+      const img = document.createElement("img");
+      img.alt = "";
+      img.onerror = () => { av.textContent = initials(s.persona_id); };
+      img.src = `/api/avatar/${encodeURIComponent(s.persona_id)}.png`;
+      av.appendChild(img);
+
+      grid.appendChild(cell);
+    }
+
+    const status = s.stage1_status || "running";
+    cell.className = `cell status-${status}`;
+
+    const persona = PERSONAS[s.persona_id] || {};
+    const name = persona.archetype || s.persona_id;
+    const meta = [
+      persona.tech_literacy,
+      persona.device,
+      persona.age_range,
+      `task: ${s.task_id}`,
+    ].filter(Boolean).join(" · ");
+
+    cell.querySelector(".name").textContent = name;
+    cell.querySelector(".meta").textContent = meta;
+
+    const tok = s.cumulative_tokens || {};
+    const totalTok = (tok.prompt_tokens || 0) + (tok.completion_tokens || 0);
+    cell.querySelector(".turn-info").textContent =
+      `turn ${s.current_turn}  ·  ${actionLabel(s.last_action)}`;
+    cell.querySelector(".tokens").textContent = `${totalTok.toLocaleString()} tok`;
+
+    const badge = cell.querySelector(".badge");
+    badge.className = `badge ${status}`;
+    badge.textContent = status.replace("_", " ");
+
+    cell.querySelector(".reasoning").textContent =
+      truncate(s.last_reasoning, 140);
+  }
+}
+
+// ---- metric bar ----
+function fmtPct(x) {
+  return (typeof x === "number") ? `${(x * 100).toFixed(1)}%` : "—";
+}
+function fmtSigned(x) {
+  return (typeof x === "number") ? `${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)}%` : "—";
+}
+
+async function refreshMetrics() {
+  try {
+    const fb = await fetch("/api/feedback").then(r => r.json());
+    if (!fb) return;
+    const m = fb.metrics || {};
+    document.getElementById("m-iter").textContent = (typeof fb.iteration === "number") ? fb.iteration : "—";
+    document.getElementById("m-gameable").textContent = fmtPct(m.success_rate_gameable);
+    document.getElementById("m-heldout").textContent = fmtPct(m.success_rate_heldout);
+    const dEl = document.getElementById("m-delta");
+    dEl.textContent = fmtSigned(m.delta_gameable_vs_heldout);
+    dEl.className = "value " + (
+      typeof m.delta_gameable_vs_heldout === "number" && m.delta_gameable_vs_heldout > 0.05
+        ? "bad" : "good"
+    );
+    document.getElementById("m-abandon").textContent = fmtPct(m.abandonment_rate);
+  } catch (e) { /* ignore */ }
+}
+
+async function loadPersonas() {
+  try {
+    PERSONAS = await fetch("/api/personas").then(r => r.json());
+  } catch (e) { PERSONAS = {}; }
+}
+
+// ---- bootstrap ----
+loadPersonas().then(() => {
+  fetch("/api/sessions").then(r => r.json()).then(render);
+  refreshMetrics();
+});
+
+const es = new EventSource("/api/stream");
+es.onmessage = (e) => render(JSON.parse(e.data));
+es.onerror = () => console.warn("SSE error, browser will retry");
+
+setInterval(refreshMetrics, 4000);
+setInterval(loadPersonas, 30000);  // pick up newly-generated personas
+</script>
+</body>
+</html>

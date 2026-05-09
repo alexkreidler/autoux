@@ -1,0 +1,29 @@
+[project]
+name = "cua-hackathon"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.40.0",
+    "fastapi>=0.136.1",
+    "hdbscan>=0.8.40",
+    "kernel>=0.52.0",
+    "openai>=1.50.0",
+    "playwright>=1.59.0",
+    "pydantic>=2.9.0",
+    "python-dotenv>=1.2.2",
+    "pyyaml>=6.0",
+    "scikit-learn>=1.8.0",
+    "tenacity>=9.1.4",
+    "tzafon>=2.39.0",
+    "uvicorn>=0.46.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/usersim", "src/coder"]
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
