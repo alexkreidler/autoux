@@ -291,7 +291,14 @@ export default function RunModal({ personas, onClose }: Props) {
             <select
               className={inputClass}
               value={agent}
-              onChange={(e) => setAgent(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setAgent(next);
+                // Default endpoint per provider — only fill if user hasn't typed one yet.
+                if (!agentEndpoint) {
+                  if (next === "surfer") setAgentEndpoint("https://gpu.alexkreidler.com");
+                }
+              }}
             >
               {agents.map((a) => (
                 <option key={a} value={a}>{a}</option>
