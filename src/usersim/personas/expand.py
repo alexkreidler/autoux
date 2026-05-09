@@ -97,6 +97,40 @@ def _dump_jsonl(records: list[dict], path: Path) -> None:
     path.write_text("\n".join(json.dumps(r) for r in records) + "\n")
 
 
+# Aliases the model frequently emits that don't match Persona's strict Literals.
+_DEVICE_MAP = {
+    "laptop": "desktop", "computer": "desktop", "pc": "desktop",
+    "chromebook": "desktop", "macbook": "desktop", "netbook": "desktop",
+    "phone": "mobile", "smartphone": "mobile", "iphone": "mobile", "android": "mobile",
+    "ipad": "tablet", "ipad_mini": "tablet",
+}
+_TL_MAP = {"novice": "low", "beginner": "low", "expert": "high", "advanced": "high",
+           "intermediate": "medium", "moderate": "medium"}
+_LF_MAP = {"fluent": "native", "near-native": "native",
+           "advanced": "proficient", "intermediate": "proficient",
+           "basic": "limited", "beginner": "limited"}
+_AGE_MAP = {
+    "18-24": "18-25", "20-30": "26-40", "20-25": "18-25", "25-30": "26-40",
+    "25-35": "26-40", "30-40": "26-40", "30-45": "26-40",
+    "40-50": "41-60", "50-60": "41-60", "60-70": "61+",
+    "60+": "61+", "65+": "61+", "70+": "61+",
+}
+
+
+def _coerce(raw: dict) -> dict:
+    """Normalize model output to match Persona's Literal fields."""
+    if isinstance(raw.get("device"), str):
+        raw["device"] = _DEVICE_MAP.get(raw["device"].lower().strip(), raw["device"])
+    if isinstance(raw.get("tech_literacy"), str):
+        raw["tech_literacy"] = _TL_MAP.get(raw["tech_literacy"].lower().strip(), raw["tech_literacy"])
+    if isinstance(raw.get("language_fluency"), str):
+        raw["language_fluency"] = _LF_MAP.get(raw["language_fluency"].lower().strip(), raw["language_fluency"])
+    if isinstance(raw.get("age_range"), str):
+        ar = raw["age_range"].replace(" ", "").replace("yrs", "").replace("years", "")
+        raw["age_range"] = _AGE_MAP.get(ar, raw["age_range"])
+    return raw
+
+
 def _expand(client: openai.OpenAI, model: str, seed: dict, negatives: list[dict], n: int) -> list[dict]:
     neg_str = json.dumps([p.get("archetype", p.get("id")) for p in negatives], indent=None)
     prompt = EXPAND_PROMPT.format(
@@ -167,26 +201,43 @@ def main() -> None:
     expansions_needed = max(0, args.target_n - len(seeds))
     per_seed = max(1, expansions_needed // len(seeds))
 
-    print(f"Seeds: {len(seeds)}. Expanding {per_seed} per seed → target {args.target_n}.")
+    print(f"Seeds: {len(seeds)}. Expanding ~{per_seed} per seed → target {args.target_n}.")
 
-    for seed in seeds:
-        if len(all_personas) >= args.target_n:
-            break
-        n = min(per_seed, args.target_n - len(all_personas))
-        print(f"  Expanding '{seed['id']}' → {n} new personas...", end=" ", flush=True)
+    # Over-request a bit to absorb validation drops (~25% loss observed empirically).
+    request_n = max(per_seed, int(per_seed * 1.4))
+
+    # Parallel per-seed expansion (each call ~30s; 5 seeds in parallel → ~30s total)
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _expand_one(seed: dict) -> tuple[str, list[dict]]:
         try:
-            new_raw = _expand(client, model, seed, all_personas, n)
-            validated = []
-            for raw in new_raw:
-                try:
-                    p = Persona(**raw)
-                    validated.append(p.model_dump())
-                except Exception as e:
-                    print(f"\n    [warn] skipping invalid persona: {e}", file=sys.stderr)
-            all_personas.extend(validated)
-            print(f"got {len(validated)}")
+            new_raw = _expand(client, model, seed, all_personas, request_n)
         except Exception as e:
-            print(f"\n  [error] expansion failed for '{seed['id']}': {e}", file=sys.stderr)
+            print(f"\n  [error] '{seed['id']}': {e}", file=sys.stderr)
+            return seed["id"], []
+        validated = []
+        for raw in new_raw:
+            try:
+                p = Persona(**_coerce(raw))
+                validated.append(p.model_dump())
+            except Exception as e:
+                print(f"    [warn] '{seed['id']}' dropped invalid ({raw.get('id', '?')}): {str(e)[:80]}", file=sys.stderr)
+        return seed["id"], validated
+
+    with ThreadPoolExecutor(max_workers=len(seeds)) as ex:
+        for sid, batch in ex.map(_expand_one, seeds):
+            print(f"  '{sid}' → {len(batch)} valid")
+            all_personas.extend(batch)
+
+    # Dedupe by id (rare but possible across parallel batches), then trim to target.
+    seen: set[str] = set()
+    deduped = []
+    for p in all_personas:
+        if p["id"] in seen:
+            continue
+        seen.add(p["id"])
+        deduped.append(p)
+    all_personas = deduped[: args.target_n]
 
     _dump_jsonl(all_personas, args.out)
     print(f"\nWrote {len(all_personas)} personas to {args.out}")
