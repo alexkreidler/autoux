@@ -70,3 +70,6 @@ Thumbs.db
 # Old generations live under avatars_v* and are not committed.
 configs/personas/avatars_v*/
 demo/
+
+# slide exports (regenerated)
+slides/exports/
