@@ -165,8 +165,8 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* metric bar — only show for live mode */}
-      {!isHistoryMode && <MetricBar />}
+      {/* metric bar — only show when there are active live sessions */}
+      {!isHistoryMode && liveSessions.length > 0 && <MetricBar />}
 
       {/* action bar */}
       <div className="flex justify-end items-center gap-3 mb-[14px]">
