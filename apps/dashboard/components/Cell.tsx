@@ -1,7 +1,8 @@
 "use client";
 
 import AvatarChip from "./AvatarChip";
-import type { ActiveRollout, Persona } from "@/lib/types";
+import type { ActiveRollout, HistoricalSession, Persona, TrajectoryRecord } from "@/lib/types";
+import { apiUrl } from "@/lib/api";
 import { actionLabel } from "@/lib/utils";
 
 const STATUS_BORDER: Record<string, string> = {
@@ -29,6 +30,7 @@ interface Props {
   selectMode?: boolean;
   onFocus?: (id: string) => void;
   onToggleSelect?: (id: string) => void;
+  currentStep?: number; // when set, render historical scrubber frame
 }
 
 export default function Cell({
@@ -38,8 +40,45 @@ export default function Cell({
   selectMode = false,
   onFocus,
   onToggleSelect,
+  currentStep,
 }: Props) {
-  const status = s.stage1_status ?? "running";
+  // Historical scrubber logic — only active when currentStep is defined
+  const hist = currentStep !== undefined ? (s as unknown as HistoricalSession) : null;
+  const records: TrajectoryRecord[] = hist?.trajectory_records ?? [];
+  const steps = records.filter((r) => r.kind === "step");
+  const n_steps = hist?.n_steps ?? steps.length;
+
+  // Derive playback state at currentStep
+  const stepIndex = Math.min(currentStep ?? 0, steps.length - 1);
+  const stepRecord = stepIndex >= 0 ? steps[stepIndex] : null;
+  const hasEnded = currentStep !== undefined && currentStep >= n_steps && n_steps > 0;
+
+  // Thumbnail URL for historical step
+  let thumbnailUrl: string | null = null;
+  if (hist && steps.length > 0) {
+    const effectiveStep = hasEnded ? steps[steps.length - 1] : (stepRecord ?? steps[0]);
+    const shotPath = effectiveStep?.observation?.screenshot_path;
+    if (shotPath) {
+      // screenshot_path is relative to the run's thumbnails dir
+      // runDir may include app sub-dir for sweeps
+      const runDir = hist.app ? `${hist.run_dir}/${hist.app}` : hist.run_dir;
+      // strip leading "thumbnails/" prefix if present; path from record is relative to run
+      const rel = shotPath.startsWith("thumbnails/") ? shotPath : `thumbnails/${shotPath.split("thumbnails/").pop() ?? shotPath}`;
+      thumbnailUrl = apiUrl(`/api/thumbnail?path=${encodeURIComponent(`${runDir}/${rel}`)}`);
+    }
+  }
+
+  // Status to display — "running" while N < n_steps, terminal once ended
+  const playbackStatus = hist
+    ? (hasEnded ? (s.stage1_status ?? "running") : "running")
+    : s.stage1_status ?? "running";
+
+  // Reasoning for current step
+  const playbackReasoning = hist && stepRecord
+    ? (stepRecord.reasoning ?? []).join(" ")
+    : s.last_reasoning ?? "";
+
+  const status = playbackStatus;
   const borderColor = STATUS_BORDER[status] ?? "border-line";
   const badgeStyle = STATUS_BADGE[status] ?? STATUS_BADGE.running;
 
@@ -55,7 +94,7 @@ export default function Cell({
 
   const tok = s.cumulative_tokens;
   const totalTok = (tok?.prompt_tokens ?? 0) + (tok?.completion_tokens ?? 0);
-  const reasoning = s.last_reasoning ?? "";
+  const reasoning = playbackReasoning;
 
   // Selection ring: olive when selected, transparent otherwise. Outer wrapper
   // animates ring + scale so the cell pops when picked from a marquee.
@@ -68,8 +107,21 @@ export default function Cell({
       data-cell-id={s.browser_session_id}
       className={`relative bg-white border ${borderColor} overflow-hidden h-full transition-all duration-150 group ${ringClasses}`}
     >
-      {/* iframe takes the entire cell at natural 16:10 */}
-      {s.live_view_url ? (
+      {/* historical scrubber: thumbnail at current step */}
+      {hist ? (
+        thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={`step ${currentStep}`}
+            className="w-full h-full object-cover object-top"
+          />
+        ) : (
+          <div className="w-full h-full bg-cream flex items-center justify-center">
+            <AvatarChip personaId={s.persona_id} size={64} />
+          </div>
+        )
+      ) : s.live_view_url ? (
+        /* iframe takes the entire cell at natural 16:10 */
         <iframe
           src={s.live_view_url}
           className="w-full h-full border-0 bg-cream block"
@@ -140,7 +192,9 @@ export default function Cell({
       {/* bottom overlay: turn/action/tokens. Always visible. */}
       <div className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-white/90 backdrop-blur-sm border-t border-line-soft text-[10px] flex justify-between items-center gap-2 pointer-events-none">
         <span className="text-ink-soft font-mono truncate">
-          turn {s.current_turn} · {actionLabel(s.last_action)}
+          {hist && stepRecord
+            ? `turn ${stepRecord.turn ?? (currentStep ?? 0)} · ${actionLabel(stepRecord.action ?? null)}`
+            : `turn ${s.current_turn} · ${actionLabel(s.last_action)}`}
         </span>
         <span className="text-muted tnum shrink-0">{totalTok.toLocaleString()} tok</span>
       </div>

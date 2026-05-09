@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl, fetchJson } from "@/lib/api";
 import { useSessions } from "./useSessions";
 import MetricBar from "./MetricBar";
@@ -10,7 +10,8 @@ import FocusedCell from "./FocusedCell";
 import EmptyState from "./EmptyState";
 import PastRunsBrowser from "./PastRunsBrowser";
 import ResultsView from "./ResultsView";
-import type { ActiveRollout, HistoricalRun, HistoricalSession, Persona } from "@/lib/types";
+import PlaybackBar from "./PlaybackBar";
+import type { ActiveRollout, HistoricalRun, HistoricalSession, Persona, TrajectoryRecord } from "@/lib/types";
 
 export default function Dashboard() {
   const liveSessions = useSessions();
@@ -27,6 +28,13 @@ export default function Dashboard() {
   const [historicalSessions, setHistoricalSessions] = useState<HistoricalSession[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showResults, setShowResults] = useState(false);
+
+  // Playback scrubber state
+  const [currentStep, setCurrentStep] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const maxStep = historicalSessions.reduce((m, s) => Math.max(m, s.n_steps ?? 0), 0);
+  const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Derived: which sessions are shown in the grid
   const isHistoryMode = activeHistoricalRun !== null;
@@ -68,6 +76,26 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", onKey);
   }, [focusedId, showResults, selectMode, selection.size, sessions]);
 
+  // Playback interval — advance currentStep while playing
+  useEffect(() => {
+    if (!playing) {
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+      return;
+    }
+    playIntervalRef.current = setInterval(() => {
+      setCurrentStep((s) => {
+        if (s >= maxStep) {
+          setPlaying(false);
+          return s;
+        }
+        return s + 1;
+      });
+    }, Math.round(800 / playbackSpeed));
+    return () => {
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+    };
+  }, [playing, playbackSpeed, maxStep]);
+
   // Drop selections that no longer exist
   useEffect(() => {
     if (isHistoryMode) return; // historical sessions are stable
@@ -104,11 +132,32 @@ export default function Dashboard() {
     setFocusedId(null);
     setSelection(new Set());
     setSelectMode(false);
+    setCurrentStep(0);
+    setPlaying(false);
     try {
       const data = await fetchJson<HistoricalSession[]>(
         `/api/runs/historical/${encodeURIComponent(run.run_dir)}/sessions`
       );
-      setHistoricalSessions(data);
+      // Pre-fetch trajectory records for each session (for scrubber playback)
+      const enriched = await Promise.all(
+        data.map(async (session) => {
+          try {
+            const params = new URLSearchParams({
+              persona_id: session.persona_id,
+              task_id: session.task_id,
+              browser_session_id: session.browser_session_id,
+            });
+            const traj = await fetchJson<{ path: string; records: TrajectoryRecord[] }>(
+              `/api/trajectory?${params}`
+            );
+            const steps = traj.records.filter((r) => r.kind === "step");
+            return { ...session, trajectory_records: traj.records, n_steps: steps.length };
+          } catch {
+            return session;
+          }
+        })
+      );
+      setHistoricalSessions(enriched);
       setActiveHistoricalRun(run);
     } catch (e) {
       alert(`failed to load run: ${e instanceof Error ? e.message : "unknown"}`);
@@ -123,6 +172,8 @@ export default function Dashboard() {
     setShowResults(false);
     setFocusedId(null);
     setSelection(new Set());
+    setCurrentStep(0);
+    setPlaying(false);
   }
 
   async function handleReap() {
@@ -148,15 +199,19 @@ export default function Dashboard() {
       {/* header */}
       <header className="flex justify-between items-baseline border-b border-line pb-[14px] mb-[18px]">
         <h1 className="m-0 text-[20px] font-medium tracking-[-0.01em] lowercase flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-olive" />
-          autoux · live rollouts
-        </h1>
-        <div className="flex items-center gap-3">
-          {isHistoryMode && (
-            <span className="text-[11px] text-clay lowercase border border-clay px-2 py-0.5">
+          autoux
+          {isHistoryMode ? (
+            <span className="text-[11px] text-clay lowercase border border-clay px-2 py-0.5 font-normal">
               history: {activeHistoricalRun.display_name}
             </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-[11px] text-olive font-normal">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-olive animate-pulse" />
+              live
+            </span>
           )}
+        </h1>
+        <div className="flex items-center gap-3">
           <span className="text-muted text-[13px]">
             {isHistoryMode
               ? `${historicalSessions.length} replays`
@@ -224,7 +279,7 @@ export default function Dashboard() {
 
         <button
           type="button"
-          onClick={() => setShowModal(true)}
+          onClick={() => { if (isHistoryMode) handleClearHistory(); setShowModal(true); }}
           className="px-4 py-2 border border-olive text-olive text-[13px] lowercase tracking-[0.02em] hover:bg-olive hover:text-white transition-colors"
         >
           + new run
@@ -267,6 +322,23 @@ export default function Dashboard() {
           selectMode={selectMode && !isHistoryMode}
           onSelectionChange={setSelection}
           onFocus={handleFocus}
+          currentStep={isHistoryMode ? currentStep : undefined}
+        />
+      )}
+
+      {/* playback bar — shown only in history mode */}
+      {isHistoryMode && !showResults && !loadingHistory && (
+        <PlaybackBar
+          currentStep={currentStep}
+          maxStep={maxStep}
+          playing={playing}
+          playbackSpeed={playbackSpeed}
+          onStepChange={(step) => { setCurrentStep(step); setPlaying(false); }}
+          onTogglePlay={() => {
+            if (currentStep >= maxStep) setCurrentStep(0);
+            setPlaying((p) => !p);
+          }}
+          onSpeedChange={setPlaybackSpeed}
         />
       )}
 

@@ -20,6 +20,7 @@ interface Props {
   selectMode: boolean;
   onSelectionChange: (next: Set<string>) => void;
   onFocus: (id: string) => void;
+  currentStep?: number; // historical playback scrubber position
 }
 
 interface MarqueeState {
@@ -79,6 +80,7 @@ export default function Grid({
   selectMode,
   onSelectionChange,
   onFocus,
+  currentStep,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -238,6 +240,7 @@ export default function Grid({
               selectMode={selectMode}
               onFocus={onFocus}
               onToggleSelect={toggleSelection}
+              currentStep={currentStep}
             />
           ))}
         </div>

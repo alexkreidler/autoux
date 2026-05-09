@@ -1,5 +1,25 @@
 // Mirror of usersim/schemas.py — keep in sync with backend models
 
+export interface TrajectoryRecord {
+  kind: "header" | "step" | "footer";
+  // header
+  agent_model?: string;
+  started_at?: string;
+  // step
+  turn?: number;
+  action?: { type: string; args: Record<string, unknown> };
+  reasoning?: string[];
+  observation?: { page_url?: string; page_title?: string; screenshot_path?: string };
+  delta?: { dom_changed?: boolean; is_dead_click?: boolean; consecutive_unchanged?: number };
+  timing?: { model_ms?: number; total_ms?: number };
+  tokens?: { prompt_tokens?: number; completion_tokens?: number };
+  // footer
+  ended_at?: string;
+  terminal_reason?: string;
+  final_url?: string;
+  error?: string;
+}
+
 export interface TurnMeta {
   model_ms: number;
   prompt_tokens: number;
@@ -123,6 +143,8 @@ export interface HistoricalSession {
   app?: string;               // set for sweep sub-dirs
   terminal_reason?: string;
   replay_path?: string | null; // relative to runs/ if available
+  trajectory_records?: TrajectoryRecord[]; // pre-fetched for scrubber playback
+  n_steps?: number;           // total step count (from trajectory footer or records)
 }
 
 // Per-persona result summary (from feedback.json or computed from trajectories)

@@ -143,10 +143,14 @@ export default function EmptyState({ personas, onNewRun }: Props) {
 
       {/* CTA */}
       <div className="text-center">
-        <p className="text-[14px] text-ink-soft lowercase mb-1">
+        <p className="text-[14px] text-ink-soft lowercase mb-1 flex items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-olive animate-pulse" />
+            <span className="text-olive text-[11px] tracking-[0.04em]">live</span>
+          </span>
           {ids.length > 0
-            ? `${ids.length} personas loaded, ready to roll`
-            : "no active rollouts"}
+            ? `${ids.length} personas loaded · waiting for runs`
+            : "waiting for runs"}
         </p>
         <p className="text-[12px] text-muted lowercase mb-5">
           kick off a run to see the grid populate live
