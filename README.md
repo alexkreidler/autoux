@@ -1,5 +1,9 @@
 # AutoUX — a CUA UserSim
 
+<video src="https://github.com/alexkreidler/computer-hack/raw/main/docs/screenshots/00-hero-mega2-scrollthrough.mp4" width="100%" autoplay muted loop playsinline controls>
+  <a href="docs/screenshots/00-hero-mega2-scrollthrough.mp4">▶ scroll-through of mega2 — 200 rollouts, 25 personas × 5 OSS apps</a>
+</video>
+
 **Drive 25+ simulated personas through any web app in parallel.** Each
 persona is a real persona — name, age, tech literacy, patience, quirks —
 and every rollout is a real Kernel browser session driven by a real CUA
@@ -11,9 +15,12 @@ a live grid you can scrub through, focus into, and export.
 > (200-rollout study, p < 0.001). Personas aren't flavor text — they
 > measurably steer agent behavior on real production websites.
 
-<!-- screenshots: docs/screenshots/ — put four 1920x1080 captures here named:
-       01-empty-state.png       02-live-grid.png
-       03-focused-cell.png      04-results-view.png  -->
+## Screens
+
+|  |  |
+|---|---|
+| ![empty state with 100-persona casting reel](docs/screenshots/01-empty-state.png) | ![past runs dropdown](docs/screenshots/05-past-runs-dropdown.png) |
+| **Empty state** — casting reel of 100 generated personas. Click any avatar for a profile popover. | **Past runs** — every sweep on disk is browseable. Pick one to load it into the grid + scrub through. |
 
 ## Demo
 
