@@ -1,0 +1,29 @@
+# Live-demo config — picked for the screen recording.
+# Public Mastodon timeline + open-ended browse → personas diverge fast,
+# trajectories complete in ~30-60s, no anti-bot pain, every cell looks
+# different on screen.
+target_url: https://mastodon.social/explore
+target_commit: external
+
+success_url_pattern: "/@.*?/[0-9]"
+
+tasks:
+  - id: pick_a_post
+    description: |
+      Browse the public Mastodon timeline. Find ONE post that genuinely
+      interests YOU based on who you are. Click into it to read the
+      replies. When you've picked one and are reading it, emit action
+      'answer' with text describing why this post interested you in
+      one sentence. Don't pick the first post — pick one that fits your
+      interests.
+
+# personas pool — modal will let you pick a subset via the multi-select.
+# Five hand-written archetypes give the strongest persona-variance signal:
+#   rushed_mobile, elderly_first_time, power_user_skeptic, esl_speaker, impatient_dad
+personas_path: configs/personas/expanded.jsonl
+
+# Sensible defaults the modal sliders override
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
