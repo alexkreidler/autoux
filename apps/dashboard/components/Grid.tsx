@@ -78,30 +78,32 @@ export default function Grid({ sessions, personas }: Props) {
     [sessions.length, dims.w, dims.h]
   );
 
-  if (sessions.length === 0) {
-    return (
-      <div className="border border-dashed border-line bg-white text-center p-[60px] text-muted lowercase">
-        <p className="text-[15px]">no active rollouts.</p>
-        <p className="text-[13px] mt-1">click + new run to start one.</p>
-      </div>
-    );
-  }
-
+  // IMPORTANT: keep this ref-bearing container in the tree on EVERY render,
+  // including the empty state. Earlier we returned a different element when
+  // sessions were empty — the ref never attached on first mount, useEffect
+  // ran with a null ref, and ResizeObserver never registered. dims stayed
+  // {0,0} for the lifetime of the component → computeLayout fell back to
+  // cols=1, producing horizontal stripes.
   return (
-    // Allow vertical scroll when N is large enough that even MIN_CELL_W can't
-    // tile in one screen — better than micro-stripes.
     <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-      <div
-        className="grid gap-[14px]"
-        style={{
-          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-          gridAutoRows: `${cellH}px`,
-        }}
-      >
-        {sessions.map((s) => (
-          <Cell key={s.browser_session_id} session={s} persona={personas[s.persona_id]} />
-        ))}
-      </div>
+      {sessions.length === 0 ? (
+        <div className="border border-dashed border-line bg-white text-center p-[60px] text-muted lowercase">
+          <p className="text-[15px]">no active rollouts.</p>
+          <p className="text-[13px] mt-1">click + new run to start one.</p>
+        </div>
+      ) : (
+        <div
+          className="grid gap-[14px]"
+          style={{
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gridAutoRows: `${cellH}px`,
+          }}
+        >
+          {sessions.map((s) => (
+            <Cell key={s.browser_session_id} session={s} persona={personas[s.persona_id]} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
