@@ -20,7 +20,7 @@ Mastodon,http://mastodon.usersim.alexkreidler.com,Social Network,up,,,https://gi
 OpenProject,http://openproject.usersim.alexkreidler.com,Project Management,up,admin,admin123admin123,https://github.com/opf/openproject,"Enterprise PM. Auto-seeded demo projects with Gantt charts. Postgres + memcached."
 Taiga,http://taiga.usersim.alexkreidler.com,Agile PM,up,admin,123123,https://github.com/taigaio/taiga-docker,"Scrum + Kanban. Postgres + RabbitMQ. Front + back + gateway."
 Plane,http://plane.usersim.alexkreidler.com,Project Management,up,,,https://github.com/makeplane/plane,"Jira/Linear alternative. Sign up on first visit. Postgres + Redis + MinIO."
-ERPNext,http://erpnext.usersim.alexkreidler.com,ERP,down,,admin123,https://github.com/frappe/erpnext,"500. Gunicorn running on :8000 but no Frappe site initialized. Needs bench new-site. Bumped to 3Gi + MariaDB 1Gi."
+ERPNext,http://erpnext.usersim.alexkreidler.com,ERP,up,Administrator,admin123,https://github.com/frappe/erpnext,"Site created via init container. PVC for sites dir. Setup wizard on first visit. MariaDB root pw: admin."
 Zammad,http://zammad.usersim.alexkreidler.com,Helpdesk/Ticketing,skip,,,https://github.com/zammad/zammad,"SKIP: Init container crashlooping - entrypoint needs shared volume writable."
 Discourse,http://discourse.usersim.alexkreidler.com,Forum,skip,admin,admin12345,https://github.com/discourse/discourse,"SKIP: db:migrate failing in init. Needs DISCOURSE_DB env prefix format fix."
 Huly,http://huly.usersim.alexkreidler.com,Project Management,up,,,https://github.com/hcengineering/platform,"All-in-one PM. Frontend serving on :8080. MongoDB + ES + MinIO. Sign up on first visit."

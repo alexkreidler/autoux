@@ -218,6 +218,7 @@ metadata:
   name: twenty
   namespace: twenty
 spec:
+  ingressClassName: nginx
   rules:
   - host: twenty.usersim.alexkreidler.com
     http:

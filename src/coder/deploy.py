@@ -173,9 +173,12 @@ class K8sBackend:
             "usersim.dev/source-repo": str(repo_dir),
         }
 
+        deploy_name = f"{self._app}-{version}"
         manifest = _render_dev_manifest(
             namespace=self._dev_ns,
             app_name=self._app,
+            deploy_name=deploy_name,
+            version=version,
             container_name=self._container,
             image=image,
             port=self._c.service_port,
@@ -199,7 +202,7 @@ class K8sBackend:
         print(f"  [deploy] waiting for rollout (timeout={self._c.rollout_timeout_s}s)")
         ok, err = await _run_check([
             "kubectl", "rollout", "status",
-            f"deployment/{self._app}",
+            f"deployment/{deploy_name}",
             "-n", self._dev_ns,
             f"--timeout={self._c.rollout_timeout_s}s",
         ])
@@ -210,7 +213,7 @@ class K8sBackend:
                 duration_ms=_elapsed(started),
             )
 
-        service_url = f"http://{self._app}.{self._dev_ns}.svc.cluster.local:{self._c.service_port}"
+        service_url = f"http://{self._app}-{version}.usersim.alexkreidler.com"
         print(f"  [deploy] live at {service_url}")
         return DeployResult(
             success=True,
@@ -234,18 +237,29 @@ def _render_dev_manifest(
     *,
     namespace: str,
     app_name: str,
+    deploy_name: str,
+    version: str,
     container_name: str,
     image: str,
     port: int,
     labels: dict[str, str],
     annotations: dict[str, str],
 ) -> str:
-    """Render a minimal Namespace + Deployment + Service YAML for the dev env."""
+    """Render a minimal Namespace + Deployment + Service + Ingress YAML.
+
+    Resources are named ``deploy_name`` (e.g. ``grafana-v1``) so that
+    multiple versions can coexist in the same dev namespace.  The ingress
+    host follows the pattern ``v<N>.<app>.usersim.alexkreidler.com``.
+    """
     import yaml as _yaml
 
     def _labels(d: dict[str, str]) -> dict[str, str]:
         # K8s label values must be ≤63 chars, alphanumeric/dash/dot/underscore
         return {k: v for k, v in d.items() if len(v) <= 63}
+
+    # Pod selector uses the versioned name so each version's service
+    # only routes to its own pods.
+    selector_labels = {"app": deploy_name}
 
     ns = {
         "apiVersion": "v1", "kind": "Namespace",
@@ -254,14 +268,14 @@ def _render_dev_manifest(
     deploy = {
         "apiVersion": "apps/v1", "kind": "Deployment",
         "metadata": {
-            "name": app_name, "namespace": namespace,
+            "name": deploy_name, "namespace": namespace,
             "labels": _labels(labels), "annotations": annotations,
         },
         "spec": {
             "replicas": 1,
-            "selector": {"matchLabels": {"app": app_name}},
+            "selector": {"matchLabels": selector_labels},
             "template": {
-                "metadata": {"labels": _labels(labels)},
+                "metadata": {"labels": {**_labels(labels), **selector_labels}},
                 "spec": {
                     "imagePullSecrets": [{"name": "ghcr-pull"}],
                     "containers": [{
@@ -279,13 +293,38 @@ def _render_dev_manifest(
     }
     svc = {
         "apiVersion": "v1", "kind": "Service",
-        "metadata": {"name": app_name, "namespace": namespace, "labels": _labels(labels)},
+        "metadata": {"name": deploy_name, "namespace": namespace, "labels": _labels(labels)},
         "spec": {
-            "selector": {"app": app_name},
+            "selector": selector_labels,
             "ports": [{"port": port, "targetPort": port}],
         },
     }
-    return "---\n".join(_yaml.dump(doc, default_flow_style=False) for doc in [ns, deploy, svc])
+    # Ingress: <app>-v<N>.usersim.alexkreidler.com → versioned service
+    # Flat subdomain (not nested) because the external proxy only handles
+    # single-level *.usersim.alexkreidler.com wildcards.
+    host = f"{app_name}-{version}.usersim.alexkreidler.com"
+    ingress = {
+        "apiVersion": "networking.k8s.io/v1", "kind": "Ingress",
+        "metadata": {
+            "name": deploy_name, "namespace": namespace,
+            "labels": _labels(labels),
+            "annotations": {**annotations, "nginx.ingress.kubernetes.io/proxy-body-size": "0"},
+        },
+        "spec": {
+            "ingressClassName": "nginx",
+            "rules": [{
+                "host": host,
+                "http": {
+                    "paths": [{
+                        "path": "/",
+                        "pathType": "Prefix",
+                        "backend": {"service": {"name": deploy_name, "port": {"number": port}}},
+                    }],
+                },
+            }],
+        },
+    }
+    return "---\n".join(_yaml.dump(doc, default_flow_style=False) for doc in [ns, deploy, svc, ingress])
 
 
 # ---------------------------------------------------------------------------

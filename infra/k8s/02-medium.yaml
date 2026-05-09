@@ -436,9 +436,9 @@ spec:
         - containerPort: 3000
         env:
         - name: SERVER_URL
-          value: "http://98.92.239.172:30113"
+          value: "http://twenty.usersim.alexkreidler.com"
         - name: FRONT_BASE_URL
-          value: "http://98.92.239.172:30113"
+          value: "http://twenty.usersim.alexkreidler.com"
         - name: PG_DATABASE_URL
           value: "postgres://twenty:twenty@twenty-db:5432/default"
         - name: REDIS_URL
