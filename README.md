@@ -1,200 +1,155 @@
-# cua-hackathon — Auto-UX with Reward Hacking
+# AutoUX — a CUA UserSim
 
-A closed-loop system that uses a CUA (computer-use agent) to roll out
-synthetic personas against a target web app, distills the trajectories into
-actionable friction signal, and hands that signal to a coding agent to patch
-the app — then repeats. The research thesis is **detecting reward hacking**:
-two-stage reward (gameable + held-out) lets us see when the coding agent is
-gaming the goalpost rather than fixing real problems.
+**Drive 25+ simulated personas through any web app in parallel.** Each
+persona is a real persona — name, age, tech literacy, patience, quirks —
+and every rollout is a real Kernel browser session driven by a real CUA
+model (Surfer / Northstar / Claude computer-use). Trajectories stream to
+a live grid you can scrub through, focus into, and export.
 
-> Read this end-to-end before touching anything. If you're an agent picking
-> up work, also read `docs/HANDOFF.md` (rolling task list),
-> `docs/USERSIM_PLAN.md` (architecture decisions), and
-> `docs/CODE_QUALITY.md` (audit + open items).
+> **Empirical finding:** the persona spec we hand-write predicts agent
+> token usage with **Pearson r = 0.65–0.86 on 4 of 5 open-ended tasks**
+> (200-rollout study, p < 0.001). Personas aren't flavor text — they
+> measurably steer agent behavior on real production websites.
 
----
+<!-- screenshots: docs/screenshots/ — put four 1920x1080 captures here named:
+       01-empty-state.png       02-live-grid.png
+       03-focused-cell.png      04-results-view.png  -->
 
-## The loop
+## Demo
+
+| | |
+|---|---|
+| **Live dashboard** | `uv run uvicorn usersim.web.server:app --port 8766` <br> `cd apps/dashboard && npm run dev` → http://localhost:3001 |
+| **Headline chart** | `demo/persona_divergence_mega2.png` — patience input → token output, r values per app |
+| **Cinematic intro (9s)** | `demo/cinematic_intro.mp4` — zoom-out from one cell to all 200 |
+| **Slide deck** | `slides/index.html` |
+| **Canonical run** | `runs/mega2_20260509_150853/` — 200 trajectories, 25 personas × 5 OSS demo apps × open-ended tasks |
+
+## How it works
 
 ```
-   ┌─────────────── MAP (src/usersim/) ───────────────┐
-   │  N personas × M tasks                            │
-   │   ↓                                              │
-   │  asyncio fanout (semaphore-bounded)              │
-   │   ↓                                              │
-   │  per (persona, task):                            │
-   │    Kernel browser  ←→  Northstar (Tzafon CUA)    │
-   │    streaming JSONL trajectory + replay mp4       │
-   └──────────────────────┬───────────────────────────┘
-                          ↓
-   ┌────────────── REDUCE (src/usersim/reduce/) ──────┐
-   │  Stage 1: URL/DOM match → success_gameable       │
-   │  Stage 2: Claude judge → success_heldout (HIDDEN)│
-   │  Patterns:  form_clears_on_submit,               │
-   │             stuck_on_button,                     │
-   │             dead_click_storm,                    │
-   │             patience_exhausted,                  │
-   │             edge_case_thrashing,                 │
-   │             navigation_confusion                 │
-   │  Residual:  HDBSCAN over reasoning embeddings    │
-   └──────────────────────┬───────────────────────────┘
-                          ↓
-              runs/iter_N/feedback.json   ← the contract
-                          ↓
-   ┌────────────── CODER (src/coder/) ────────────────┐
-   │  read feedback.json → render prompt → run agent  │
-   │  → git diff → commit as `iter_N: auto-ux patch`  │
-   └──────────────────────────────────────────────────┘
-                          ↓
-                redeploy target, increment N, repeat
+        ┌──────────────── MAP ─────────────────┐
+        │   N personas × M tasks               │
+        │   asyncio fanout (concurrency-bounded)│
+        │   each (persona, task) →             │
+        │     Kernel browser ↔ CUA agent       │
+        │     streaming JSONL trajectory       │
+        │     replay mp4 + thumbnails          │
+        └──────────────────┬───────────────────┘
+                           ↓
+        ┌──────────────── REDUCE ──────────────┐
+        │   per-persona segments               │
+        │   distinctive quotes + actions       │
+        │   divergence score                   │
+        │   friction patterns (rule-based)     │
+        └──────────────────┬───────────────────┘
+                           ↓
+                  feedback.json (the contract)
 ```
 
-The MAP step is what we own primarily. The REDUCE step's `feedback.json`
-schema is **the locked interface** with `src/coder/`. Adding fields is safe;
-renaming/retyping is a sync point.
-
----
+The engine is **provider-agnostic** — `AgentClient` and `BrowserProvider`
+protocols mean swapping Tzafon Northstar for Surfer-on-vLLM (or anything
+else) is one new file. Everything below the protocol is the same code.
 
 ## Quickstart
 
-Single `.env` at repo root with `TZAFON_API_KEY` and `KERNEL_API_KEY`:
-
 ```bash
-# smoke test (cheap, ~10s) — example.com end-to-end
-uv run python -m usersim run --config configs/smoke.yaml --out runs/smoke --concurrency 1
+# .env at repo root: ANTHROPIC_API_KEY, KERNEL_API_KEY, TZAFON_API_KEY (any subset)
 
-# full iteration against an example target (configs/taxcaster.yaml is the
-# bundled demo config — point it at your own app for real use)
-uv run python -m usersim run --config configs/taxcaster.yaml --out runs/iter_001 --iteration 1
+# 10s smoke test against example.com
+uv run python -m usersim run --config configs/smoke.yaml --out runs/smoke
 
-# single (persona, task) spike, verbose
-uv run python -m usersim debug --config configs/taxcaster.yaml \
-    --persona rushed_mobile --task single_w2_basic --out runs/spike_001
+# Live demo: 5 personas × Mastodon timeline browse
+uv run python -m usersim run --config configs/demo_live.yaml \
+    --out runs/demo --concurrency 5 \
+    --personas rushed_mobile,impatient_dad,esl_speaker,elderly_first_time,power_user_skeptic
 
-# offline reducer test (no Kernel/Tzafon needed)
-uv run python tests/test_contract.py
+# Full sweep across the OSS-demo registry — surfer harness
+uv run python -m usersim sweep \
+    --registry configs/apps/open_ended.jsonl \
+    --personas-path configs/personas/expanded.jsonl \
+    --concurrency 25 --max-turns 22 --agent surfer \
+    --out runs/my_sweep
 
-# post-hoc grid of N replays from one iteration
-uv run python -m usersim.grid runs/iter_001 9    # 3×3 grid
-
-# diagnostics on an iteration (reasoning coverage, action histogram, friction patterns)
-uv run python -m usersim.analyze runs/iter_001
-
-# typecheck the engine
-uv run pyright src/coder src/usersim tests
-
-# live dashboard (FastAPI server + Next.js frontend)
-uv run uvicorn usersim.web.server:app --host 127.0.0.1 --port 8766    # backend
-cd apps/dashboard && npm install && npm run dev                       # frontend → :3001
+# Post-hoc: 9-up grid mp4 + per-iteration analytics
+uv run python -m usersim.grid     runs/my_sweep
+uv run python -m usersim.analyze  runs/my_sweep/<app>
 ```
 
-After a `run`: `runs/<out>/feedback.json` is the artifact the coder reads,
-`summary.md` is human-readable, `manifest.jsonl` is one-line-per-trajectory,
-`trajectories/*.jsonl` are the per-rollout streamed records (header + steps
-+ footer), `replays/*.mp4` are the Kernel session videos, `outcomes.jsonl`
-is one Outcome per trajectory.
+After any run: `feedback.json` (the contract — including
+`by_persona[]`, `persona_divergence_score`, `persona_specific_findings`),
+`summary.md` (human readable), `manifest.jsonl`, `trajectories/*.jsonl`,
+`replays/*.mp4`, `outcomes.jsonl`.
+
+## The empirical result
+
+We ran the **same task** with 25 personas across 5 open-ended UIs (Mastodon,
+Spree, Discourse, OpenCart, BookStack). For each app we correlated the
+persona's stated `patience_steps` (an input we set in the persona JSON)
+with its observed avg tokens (the output the model produced):
+
+| App | Pearson r |
+|---|---|
+| Mastodon (browse timeline) | **+0.86** |
+| Spree (find a product) | **+0.78** |
+| Discourse (read a topic) | **+0.75** |
+| OpenCart (shop & compare) | **+0.65** |
+| BookStack (find useful page) | +0.34 |
+
+Three apps show r > 0.7 (p < 0.001 by permutation test). BookStack
+attenuates because the task admits early success — even cautious personas
+finish quickly when the answer is on the first page.
+
+**Honest caveat:** the persona spec also includes per-persona LLM
+temperature, correlated with patience at r = −0.88 (intentional
+co-design). Partial r controlling for temperature ≈ 0.53. The framing
+is "the persona spec drives behavior," not "patience alone."
+
+See `demo/persona_divergence_mega2.png` for the chart.
+
+## Layout
+
+```
+cua-hackathon/
+├── apps/dashboard/          Next.js dashboard (live grid, scrubber, past runs)
+├── src/
+│   ├── usersim/             engine: clients, browsers, map, reduce, web
+│   └── coder/               coding-agent harness (claude-cli wrapper)
+├── configs/
+│   ├── personas/            seed.jsonl + expanded.jsonl + avatars/
+│   ├── apps/                target registries (open_ended, public_demos, …)
+│   └── *.yaml               per-target run configs
+├── deploy/k8s/              k8s manifests (placeholder)
+├── tests/                   reducer + Feedback contract
+└── docs/                    HANDOFF, USERSIM_PLAN, CODE_QUALITY, screenshots/
+```
+
+`runs/`, `archive/`, `demo/`, `.next/`, `node_modules/`, `.venv/` all
+gitignored.
+
+## Locked contracts
+
+1. **`Feedback`** (`src/usersim/schemas.py`) — read by `src/coder/`.
+   Adding fields safe; renaming = sync point.
+2. **`AgentClient`** (`src/usersim/clients/base.py`) — any new CUA
+   provider (Holotron, NemoClaw, etc.) implements it.
+3. **`BrowserProvider`** (`src/usersim/browsers/base.py`) — any new
+   browser host (Browserbase, local Chromium, etc.) implements it.
+4. **JSONL trajectory wire format** — `{"kind":"header"|"step"|"footer"}`.
+   Header/step/footer keys are append-only.
+
+## Built with
+
+| | |
+|---|---|
+| Browsers | [Kernel](https://kernel.sh) |
+| CUA models | Tzafon Northstar (open weights), Anthropic Claude Opus, H Company Holo3-35B-A3B (vLLM on B200) |
+| Persona generation | OpenAI gpt-5.5 + gpt-image-2 (avatars) |
+| Frontend | Next.js 16, Tailwind v4 |
+| Backend | FastAPI + SSE |
+| Hosting | VAST.ai (Holo3 vLLM) + Cloudflare Tunnel |
 
 ---
 
-## Where things live (monorepo)
-
-```
-cua-hackathon/                # repo root
-├── .env                      # secrets (gitignored)
-├── .gitignore                # secrets, runs/, replays/, node_modules, .next, …
-├── pyproject.toml            # uv-managed; one Python project covers usersim+coder
-├── uv.lock
-├── README.md                 # this file
-│
-├── apps/                     # deployable applications
-│   └── dashboard/            #   Next.js dashboard — Kernel aesthetic, autoscale
-│                             #   grid, run modal. Consumes FastAPI backend at :8766.
-│
-├── src/                      # Python source (usersim + coder, single uv project)
-│   ├── usersim/              #   ENGINE (provider-agnostic)
-│   │   ├── schemas.py        #     ← LOCKED data models. Adding fields safe.
-│   │   ├── io.py             #     streaming JSONL writer/reader/manifest
-│   │   ├── registry.py       #     live ActiveRollout registry (file-backed)
-│   │   ├── cli.py            #     `python -m usersim run|debug`
-│   │   ├── clients/
-│   │   │   ├── base.py       #     AgentClient/AgentSession Protocol (LOCKED)
-│   │   │   ├── northstar.py  #     Tzafon Northstar impl
-│   │   │   └── claude.py     #     Anthropic computer-use impl
-│   │   ├── browsers/
-│   │   │   ├── base.py       #     BrowserProvider/BrowserSession (LOCKED)
-│   │   │   └── kernel.py     #     Kernel impl
-│   │   ├── map/              #     async worker + fanout
-│   │   ├── reduce/           #     grader + patterns + aggregator → Feedback
-│   │   ├── personas/         #     LLM expansion + avatar generation
-│   │   ├── web/              #     FastAPI server (backend for apps/dashboard)
-│   │   ├── grid.py           #     post-hoc ffmpeg replay grid composer
-│   │   └── analyze.py        #     per-iteration trajectory diagnostics
-│   └── coder/                #   CODING-AGENT HALF (claude-cli wrapper, swappable)
-│
-├── configs/                  # shared declarative config
-│   ├── smoke.yaml            #   example.com smoke target (free, fast)
-│   ├── taxcaster.yaml        #   demo target (TaxCaster — public refund estimator)
-│   └── personas/
-│       ├── seed.jsonl        #   5 hand-curated archetypes
-│       ├── expanded.jsonl    #   24 LLM-expanded personas
-│       └── avatars/*.png     #   Kernel-aesthetic portraits (committed)
-│
-├── deploy/                   # deployment infra
-│   └── k8s/                  #   Kubernetes manifests (placeholder)
-│
-├── docs/
-│   ├── HANDOFF.md            #   rolling task list — start here for context
-│   ├── USERSIM_PLAN.md       #   architecture decisions, prior-art notes
-│   ├── CODE_QUALITY.md       #   audit + open items
-│   └── ARB_INTEGRATION.md    #   integration notes
-│
-├── tests/
-│   ├── fixtures/             #   synthetic trajectories for offline testing
-│   └── test_contract.py      #   offline reducer + Feedback verifier
-│
-├── templates/                # files copied into the target app
-│   └── .claude/settings.json #   coder permissions/hooks template
-│
-└── runs/                     # outputs (GITIGNORED)
-    └── _archive_pre_repo/    #   pre-repo smoke runs (will be cleared)
-```
-
----
-
-## Locked contracts (do not break without sync)
-
-1. **`Feedback` in `src/usersim/schemas.py`** — read by `src/coder/`. Adding
-   fields is safe; renaming or retyping is a sync point.
-2. **`AgentClient` Protocol in `src/usersim/clients/base.py`** — any new CUA
-   provider (Holotron, Claude computer-use, etc.) implements this.
-3. **`BrowserProvider` Protocol in `src/usersim/browsers/base.py`** — any
-   new browser host (Browserbase, local Chromium, etc.) implements this.
-4. **JSONL trajectory wire format** in `src/usersim/io.py` —
-   `{"kind":"header"|"step"|"footer", ...}`. Adding a fourth `kind` is
-   non-breaking. Header keys can grow; existing keys can't move.
-
----
-
-## Key concepts
-
-- **Two-stage reward.** Stage 1 (`success_gameable`) is cheap URL/DOM match
-  shown to the coding agent. Stage 2 (`success_heldout`) is a Claude-as-judge
-  pass over a text trajectory summary, run every Nth iteration, **never
-  shown to the coding agent**. `delta_gameable_vs_heldout` widening over
-  iterations is the reward-hacking signal.
-- **Pattern detection over statistical clustering.** `reduce/patterns.py`
-  has six rule-based detectors that map 1:1 to coding-agent fixes:
-  `form_clears_on_submit`, `stuck_on_button`, `dead_click_storm`,
-  `patience_exhausted`, `edge_case_thrashing`, `navigation_confusion`.
-  HDBSCAN over reasoning embeddings only handles the residual (failures
-  matching no known pattern).
-- **Streaming JSONL.** Each trajectory is `header → step* → footer`,
-  fsynced per step. A crash mid-rollout still leaves a parseable file (and
-  `read_trajectory` synthesizes an error footer for trajectories cut short).
-- **Cleanup is sacred.** Every `BrowserSession.release()` is idempotent and
-  in a `finally`. A failed worker never leaks a Kernel session — that's
-  budget on fire.
-- **Provider-agnostic engine.** `usersim/` mentions Tzafon/Kernel only in
-  the impl files (`clients/northstar.py`, `browsers/kernel.py`). The map
-  step + reduce step never reach into a provider SDK.
-
+For agents picking up work: see `docs/HANDOFF.md`. For architecture
+decisions: `docs/USERSIM_PLAN.md`. For audit + open items: `docs/CODE_QUALITY.md`.
