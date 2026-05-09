@@ -1,8 +1,6 @@
 # AutoUX — a CUA UserSim
 
-<video src="https://github.com/alexkreidler/computer-hack/raw/main/docs/screenshots/00-hero-mega2-scrollthrough.mp4" width="100%" autoplay muted loop playsinline controls>
-  <a href="docs/screenshots/00-hero-mega2-scrollthrough.mp4">▶ scroll-through of mega2 — 200 rollouts, 25 personas × 5 OSS apps</a>
-</video>
+![scroll-through of mega2 — 200 rollouts, 25 personas × 5 OSS apps](docs/screenshots/00-hero-mega2-scrollthrough.gif)
 
 **Drive 25+ simulated personas through any web app in parallel.** Each
 persona is a real persona — name, age, tech literacy, patience, quirks —

@@ -47,6 +47,18 @@ def main() -> None:
                 await new Promise((r) => v.addEventListener('seeked', r, { once: true }));
             }
         """)
+        # Wait for Mermaid diagrams to finish rendering — they replace
+        # `.mermaid` divs with inline SVG asynchronously after CDN load.
+        page.wait_for_function(
+            """
+            () => {
+              const blocks = [...document.querySelectorAll('.mermaid')];
+              if (!blocks.length) return true;
+              return blocks.every(b => b.querySelector('svg'));
+            }
+            """,
+            timeout=15000,
+        )
         n_slides = page.evaluate("document.querySelectorAll('section.slide').length")
         print(f"deck has {n_slides} slides")
         for i in range(n_slides):
