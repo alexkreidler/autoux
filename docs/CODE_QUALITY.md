@@ -18,7 +18,7 @@ maintainability cost. **Low** = nice-to-have.
 | F3 | High | `map/worker.py` | `MODEL_NAME = "tzafon.northstar-cua-fast"` hardcoded in worker. Wrong layer — worker doesn't own model identity. Would lie in trajectory headers when we add other clients. | Worker reads `client.MODEL` (or falls back to `"unknown"`). `NorthstarClient.MODEL` exposed at class scope. |
 | F4 | Medium | `registry.py` | `ACTIVE_FILE = Path("runs/active.json")` evaluated at import time. If cwd changes between import and use, registry silently writes to the wrong place. | Resolve lazily inside `_active_file()`. Honors `USERSIM_REGISTRY_FILE` env var for explicit override. |
 | F5 | Low | `io.py` | `path.open("w")` used platform default encoding. | Now `encoding="utf-8"`. Non-ASCII reasoning won't blow up on weird locales. |
-| F6 | Medium | `scripts/grid.py` | Hard-broken — pointed at `runs/runs.jsonl` which was the old layout. | Rewrote to consume `runs/iter_*/manifest.jsonl` produced by the runner. |
+| F6 | Medium | `src/usersim/grid.py` | Hard-broken — pointed at `runs/runs.jsonl` which was the old layout. | Rewrote to consume `runs/iter_*/manifest.jsonl` produced by the runner. |
 
 ---
 

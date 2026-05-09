@@ -74,10 +74,13 @@ uv run python -m usersim debug --config configs/taxcaster.yaml \
 uv run python tests/test_contract.py
 
 # post-hoc grid of N replays from one iteration
-uv run python scripts/grid.py runs/iter_001 9    # 3×3 grid
+uv run python -m usersim.grid runs/iter_001 9    # 3×3 grid
+
+# diagnostics on an iteration (reasoning coverage, action histogram, friction patterns)
+uv run python -m usersim.analyze runs/iter_001
 
 # typecheck the engine
-uv run pyright src/coder src/usersim tests scripts
+uv run pyright src/coder src/usersim tests
 
 # live dashboard (FastAPI server + Next.js frontend)
 uv run uvicorn usersim.web.server:app --host 127.0.0.1 --port 8766    # backend
@@ -122,7 +125,9 @@ cua-hackathon/                # repo root
 │   │   ├── map/              #     async worker + fanout
 │   │   ├── reduce/           #     grader + patterns + aggregator → Feedback
 │   │   ├── personas/         #     LLM expansion + avatar generation
-│   │   └── web/              #     FastAPI server (backend for apps/dashboard)
+│   │   ├── web/              #     FastAPI server (backend for apps/dashboard)
+│   │   ├── grid.py           #     post-hoc ffmpeg replay grid composer
+│   │   └── analyze.py        #     per-iteration trajectory diagnostics
 │   └── coder/                #   CODING-AGENT HALF (claude-cli wrapper, swappable)
 │
 ├── configs/                  # shared declarative config
@@ -141,10 +146,6 @@ cua-hackathon/                # repo root
 │   ├── USERSIM_PLAN.md       #   architecture decisions, prior-art notes
 │   ├── CODE_QUALITY.md       #   audit + open items
 │   └── ARB_INTEGRATION.md    #   integration notes
-│
-├── scripts/
-│   ├── grid.py               #   post-hoc ffmpeg replay grid
-│   └── analyze.py            #   trajectory analysis
 │
 ├── tests/
 │   ├── fixtures/             #   synthetic trajectories for offline testing

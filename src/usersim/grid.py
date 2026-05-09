@@ -4,9 +4,9 @@ Reads a single iteration directory's manifest.jsonl and stacks all replays
 listed there into a single grid.mp4. Layout auto-sized: cols = ceil(sqrt(N)).
 
 Usage:
-    python scripts/grid.py runs/iter_001                    # all replays
-    python scripts/grid.py runs/iter_001 4                  # last 4
-    python scripts/grid.py runs/iter_001 4 path/to/out.mp4  # custom output
+    python -m usersim.grid runs/iter_001                    # all replays
+    python -m usersim.grid runs/iter_001 4                  # last 4
+    python -m usersim.grid runs/iter_001 4 path/to/out.mp4  # custom output
 """
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ def build_filter(n: int, cols: int, rows: int) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        sys.exit("usage: python scripts/grid.py <iter_dir> [N] [out.mp4]")
+        sys.exit("usage: python -m usersim.grid <iter_dir> [N] [out.mp4]")
     iter_dir = Path(sys.argv[1])
     limit = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else None
     out = Path(sys.argv[3]) if len(sys.argv) > 3 else iter_dir / "grid.mp4"

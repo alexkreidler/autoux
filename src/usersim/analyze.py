@@ -11,8 +11,8 @@ Reads runs/<iter>/ and prints a structured report:
   - which friction patterns actually fire on real data
 
 Usage:
-    uv run python scripts/analyze.py runs/iter_002
-    uv run python scripts/analyze.py runs/iter_002 runs/iter_001  # compare iters
+    uv run python -m usersim.analyze runs/iter_002
+    uv run python -m usersim.analyze runs/iter_002 runs/iter_001  # compare iters
 """
 from __future__ import annotations
 
@@ -214,7 +214,7 @@ def analyze_one(iter_dir: Path) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        sys.exit("usage: python scripts/analyze.py <iter_dir> [<iter_dir> ...]")
+        sys.exit("usage: python -m usersim.analyze <iter_dir> [<iter_dir> ...]")
     for arg in sys.argv[1:]:
         print(analyze_one(Path(arg)))
         print("\n" + "=" * 78 + "\n")

@@ -46,6 +46,6 @@ patch = await run_loop(
 
 ## Target-app permissions
 
-Copy `templates/.claude/settings.json` into the target app repo before running.
+Copy `src/coder/templates/.claude/settings.json` into the target app repo before running.
 This grants the agent Edit/Write/Read/Glob/Grep and blocks Bash and WebFetch,
 so it can modify files but cannot exec arbitrary shell commands or exfiltrate data.
