@@ -226,26 +226,38 @@ def compose_tiered_grid(
 # Entrypoint
 # =============================================================================
 
+def compose_for_dir(
+    iter_dir: Path,
+    out: Path | None = None,
+    limit: int | None = None,
+) -> Path | None:
+    """Auto-dispatch single-pass vs tiered based on N. Library entrypoint —
+    callers (e.g. CLI hooks at sweep/run completion) use this. Returns the
+    output path, or None if there were no replays to compose."""
+    out = out or (iter_dir / "grid.mp4")
+    try:
+        videos = load_videos(iter_dir, limit)
+    except SystemExit:
+        return None
+    n = len(videos)
+    cols, rows = grid_layout(n)
+    if n <= TIER_THRESHOLD:
+        print(f"composing {n} videos → {cols}x{rows} single-pass grid → {out}")
+        compose_grid(videos, out)
+    else:
+        print(f"composing {n} videos → {cols}x{rows} tiered grid → {out}")
+        compose_tiered_grid(videos, out)
+    print(f"done → {out} ({out.stat().st_size:,} bytes)")
+    return out
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         sys.exit("usage: python -m usersim.grid <iter_dir> [N] [out.mp4]")
     iter_dir = Path(sys.argv[1])
     limit = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else None
-    out = Path(sys.argv[3]) if len(sys.argv) > 3 else iter_dir / "grid.mp4"
-
-    videos = load_videos(iter_dir, limit)
-    n = len(videos)
-
-    if n <= TIER_THRESHOLD:
-        cols, rows = grid_layout(n)
-        print(f"composing {n} videos → {cols}x{rows} single-pass grid → {out}")
-        compose_grid(videos, out)
-    else:
-        cols, rows = grid_layout(n)
-        print(f"composing {n} videos → {cols}x{rows} tiered grid → {out}")
-        compose_tiered_grid(videos, out)
-
-    print(f"done → {out} ({out.stat().st_size:,} bytes)")
+    out = Path(sys.argv[3]) if len(sys.argv) > 3 else None
+    compose_for_dir(iter_dir, out=out, limit=limit)
 
 
 if __name__ == "__main__":
