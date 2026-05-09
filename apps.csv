@@ -1,0 +1,16 @@
+app,url,status,username,password,notes
+Metabase,http://metabase.usersim.alexkreidler.com,live,,,"Setup wizard; built-in sample DB + dashboards"
+Kanboard,http://kanboard.usersim.alexkreidler.com,live,admin,admin,
+NocoDB,http://nocodb.usersim.alexkreidler.com,live,,,"Setup wizard; SQLite default"
+Ghost,http://ghost.usersim.alexkreidler.com,live,,,"Visit /ghost to create admin account"
+Listmonk,http://listmonk.usersim.alexkreidler.com,live,admin,admin,
+Grafana,http://grafana.usersim.alexkreidler.com,live,admin,admin,
+BookStack,http://bookstack.usersim.alexkreidler.com,live,admin@admin.com,password,
+Easy!Appointments,http://appointments.usersim.alexkreidler.com,live,,,"Setup wizard"
+Nextcloud,http://nextcloud.usersim.alexkreidler.com,live,admin,admin123,
+Invoice Ninja,http://invoiceninja.usersim.alexkreidler.com,live,admin@example.com,changeme!,
+Twenty CRM,http://twenty.usersim.alexkreidler.com,live,,,"Setup wizard; creates sample records"
+Chatwoot,http://chatwoot.usersim.alexkreidler.com,live,,,"Setup wizard"
+Bagisto,http://bagisto.usersim.alexkreidler.com,live,,,"Setup wizard; bundled MySQL"
+Plausible,http://plausible.usersim.alexkreidler.com,live,,,"Setup wizard; needs site + tracking script"
+PrestaShop,http://prestashop.usersim.alexkreidler.com,live,demo@prestashop.com,prestashop_demo,"Full e-commerce store with auto-install"

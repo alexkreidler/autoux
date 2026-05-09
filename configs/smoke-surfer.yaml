@@ -1,0 +1,36 @@
+# Smoke test using the Surfer Harness agent (Navigator + Holo Localizer).
+#
+# vLLM localizer runs on B200 via Cloudflare Tunnel (gpu.alexkreidler.com).
+# Override with agent.vllm_base or VLLM_BASE env var.
+#
+# Usage:
+#   uv run python -m usersim run --config configs/smoke-surfer.yaml --out runs/surfer_smoke
+#   uv run python -m usersim debug --config configs/smoke-surfer.yaml --persona smoke_persona --task example_h1 --out runs/surfer_debug
+
+target_url: https://example.com
+target_commit: smoke
+success_dom: "h1"
+success_url_pattern: null
+
+agent:
+  type: surfer
+  vllm_base: https://gpu.alexkreidler.com
+  navigator_model: claude-opus-4-7
+  localizer_model: Hcompany/Holo3-35B-A3B
+  max_steps: 15
+
+tasks:
+  - id: example_h1
+    description: "Read the H1 on this page and stop."
+
+personas:
+  - id: smoke_persona
+    archetype: "Simple test user"
+    tech_literacy: medium
+    patience_steps: 5
+    quirks: []
+
+max_turns: 5
+viewport:
+  width: 1280
+  height: 800

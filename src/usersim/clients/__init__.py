@@ -12,12 +12,20 @@ from typing import Any, Callable
 from usersim.clients.base import AgentClient
 from usersim.clients.claude import ClaudeCUAClient
 from usersim.clients.northstar import NorthstarClient
+from usersim.clients.surfer import SurferClient
 
 # Registry: name → factory(spec_dict) → AgentClient
 _REGISTRY: dict[str, Callable[[dict[str, Any]], AgentClient]] = {
     "northstar": lambda spec: NorthstarClient(api_key=spec.get("api_key")),
     "claude": lambda spec: ClaudeCUAClient(api_key=spec.get("api_key")),
-    # "holotron": lambda spec: HolotronClient(endpoint=spec["endpoint"], api_key=spec.get("api_key")),
+    "surfer": lambda spec: SurferClient(
+        vllm_base=spec.get("vllm_base"),
+        navigator_model=spec.get("navigator_model"),
+        localizer_model=spec.get("localizer_model"),
+        api_key=spec.get("api_key"),
+        claude_only=spec.get("claude_only", False),
+        max_steps=spec.get("max_steps", 25),
+    ),
 }
 
 
@@ -53,6 +61,7 @@ __all__ = [
     "AgentClient",
     "ClaudeCUAClient",
     "NorthstarClient",
+    "SurferClient",
     "available",
     "get_client",
     "register",
