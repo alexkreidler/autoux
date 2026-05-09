@@ -1,16 +1,26 @@
-app,url,status,username,password,notes
-Metabase,http://metabase.usersim.alexkreidler.com,live,,,"Setup wizard; built-in sample DB + dashboards"
-Kanboard,http://kanboard.usersim.alexkreidler.com,live,admin,admin,
-NocoDB,http://nocodb.usersim.alexkreidler.com,live,,,"Setup wizard; SQLite default"
-Ghost,http://ghost.usersim.alexkreidler.com,live,,,"Visit /ghost to create admin account"
-Listmonk,http://listmonk.usersim.alexkreidler.com,live,admin,admin,
-Grafana,http://grafana.usersim.alexkreidler.com,live,admin,admin,
-BookStack,http://bookstack.usersim.alexkreidler.com,live,admin@admin.com,password,
-Easy!Appointments,http://appointments.usersim.alexkreidler.com,live,,,"Setup wizard"
-Nextcloud,http://nextcloud.usersim.alexkreidler.com,live,admin,admin123,
-Invoice Ninja,http://invoiceninja.usersim.alexkreidler.com,live,admin@example.com,changeme!,
-Twenty CRM,http://twenty.usersim.alexkreidler.com,live,,,"Setup wizard; creates sample records"
-Chatwoot,http://chatwoot.usersim.alexkreidler.com,live,,,"Setup wizard"
-Bagisto,http://bagisto.usersim.alexkreidler.com,live,,,"Setup wizard; bundled MySQL"
-Plausible,http://plausible.usersim.alexkreidler.com,live,,,"Setup wizard; needs site + tracking script"
-PrestaShop,http://prestashop.usersim.alexkreidler.com,live,demo@prestashop.com,prestashop_demo,"Full e-commerce store with auto-install"
+name,url,category,status,login_user,login_password,repo,notes
+Metabase,http://metabase.usersim.alexkreidler.com,Analytics,up,,,https://github.com/metabase/metabase,"Built-in sample DB + example dashboards. Setup wizard on first visit."
+Kanboard,http://kanboard.usersim.alexkreidler.com,Task Management,up,admin,admin,https://github.com/kanboard/kanboard,"Lightweight kanban board. SQLite."
+NocoDB,http://nocodb.usersim.alexkreidler.com,No-code Database,up,,,https://github.com/nocodb/nocodb,"Airtable alternative. SQLite. Sign up on first visit."
+Ghost,http://ghost.usersim.alexkreidler.com,CMS/Publishing,skip,,,https://github.com/TryGhost/Ghost,"SKIP: CrashLoopBackOff. Admin at /ghost. MySQL backend. Welcome post included."
+Listmonk,http://listmonk.usersim.alexkreidler.com,Email/Newsletter,up,admin,admin,https://github.com/knadh/listmonk,"Go-based newsletter manager. Postgres."
+Grafana,http://grafana.usersim.alexkreidler.com,Observability,up,admin,admin,https://github.com/grafana/grafana,"Dashboards + alerting. No data source pre-configured."
+BookStack,http://bookstack.usersim.alexkreidler.com,Wiki/Knowledge Base,up,admin@admin.com,password,https://github.com/BookStackApp/BookStack,"Hierarchical wiki. MariaDB. Shelves > Books > Chapters > Pages."
+Easy!Appointments,http://appointments.usersim.alexkreidler.com,Scheduling/Booking,up,,,https://github.com/alextselegidis/easyappointments,"Booking system. MySQL. Setup wizard on first visit."
+Nextcloud,http://nextcloud.usersim.alexkreidler.com,Cloud Platform,up,admin,admin123,https://github.com/nextcloud/server,"File storage + collaboration. SQLite mode. Starter files included."
+PrestaShop,http://prestashop.usersim.alexkreidler.com,E-commerce,up,demo@prestashop.com,prestashop_demo,https://github.com/PrestaShop/PrestaShop,"Full demo shop with PS_DEMO_MODE. Admin at /admin. MySQL."
+Invoice Ninja,http://invoiceninja.usersim.alexkreidler.com,Invoicing,up,admin@example.com,changeme!,https://github.com/invoiceninja/invoiceninja,"Invoicing + quotes. PHP-FPM + nginx. MySQL."
+Twenty CRM,http://twenty.usersim.alexkreidler.com,CRM,up,,,https://github.com/twentyhq/twenty,"Modern CRM. Sign up on first visit. Postgres + Redis. Sample records on workspace creation."
+Plausible,http://plausible.usersim.alexkreidler.com,Web Analytics,up,,,https://github.com/plausible/analytics,"Privacy-first analytics. Register on first visit. Postgres + ClickHouse."
+Chatwoot,http://chatwoot.usersim.alexkreidler.com,Customer Support,up,,,https://github.com/chatwoot/chatwoot,"Omni-channel support. Sign up on first visit. Postgres + Redis."
+Bagisto,http://bagisto.usersim.alexkreidler.com,E-commerce,up,admin@example.com,admin123,https://github.com/bagisto/bagisto,"Laravel e-commerce. All-in-one image with bundled MySQL."
+Mattermost,http://mattermost.usersim.alexkreidler.com,Team Chat,up,,,https://github.com/mattermost/mattermost,"Slack alternative. Setup wizard on first visit. Postgres."
+Rocket.Chat,http://rocketchat.usersim.alexkreidler.com,Team Chat,skip,,,https://github.com/RocketChat/Rocket.Chat,"SKIP: Mongo replica set init job failing to connect. Needs manual rs.initiate."
+Mastodon,http://mastodon.usersim.alexkreidler.com,Social Network,up,,,https://github.com/mastodon/mastodon,"Federated social. HTTP->HTTPS redirect. Postgres + Redis."
+OpenProject,http://openproject.usersim.alexkreidler.com,Project Management,up,admin,admin123admin123,https://github.com/opf/openproject,"Enterprise PM. Auto-seeded demo projects with Gantt charts. Postgres + memcached."
+Taiga,http://taiga.usersim.alexkreidler.com,Agile PM,up,admin,123123,https://github.com/taigaio/taiga-docker,"Scrum + Kanban. Postgres + RabbitMQ. Front + back + gateway."
+Plane,http://plane.usersim.alexkreidler.com,Project Management,up,,,https://github.com/makeplane/plane,"Jira/Linear alternative. Sign up on first visit. Postgres + Redis + MinIO."
+ERPNext,http://erpnext.usersim.alexkreidler.com,ERP,down,,admin123,https://github.com/frappe/erpnext,"500. Gunicorn running on :8000 but no Frappe site initialized. Needs bench new-site. Bumped to 3Gi + MariaDB 1Gi."
+Zammad,http://zammad.usersim.alexkreidler.com,Helpdesk/Ticketing,skip,,,https://github.com/zammad/zammad,"SKIP: Init container crashlooping - entrypoint needs shared volume writable."
+Discourse,http://discourse.usersim.alexkreidler.com,Forum,skip,admin,admin12345,https://github.com/discourse/discourse,"SKIP: db:migrate failing in init. Needs DISCOURSE_DB env prefix format fix."
+Huly,http://huly.usersim.alexkreidler.com,Project Management,up,,,https://github.com/hcengineering/platform,"All-in-one PM. Frontend serving on :8080. MongoDB + ES + MinIO. Sign up on first visit."

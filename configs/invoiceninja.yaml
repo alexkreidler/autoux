@@ -1,0 +1,57 @@
+# Invoice Ninja — Invoicing + quotes.
+# Credentials: admin@example.com / changeme!
+# PHP-FPM + nginx. MySQL backend.
+
+target_url: http://invoiceninja.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/invoiceninja
+
+# After login, lands on /dashboard
+success_url_pattern: ".*/dashboard.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_to_dashboard
+    description: |
+      Log in with email "admin@example.com" and password "changeme!".
+      Reach the main dashboard.
+
+  - id: create_client
+    description: |
+      Log in (admin@example.com / changeme!). Create a new client with
+      name "Acme Corp", contact name "John Smith", and email "john@acme.com".
+    success_url_pattern: ".*/clients.*"
+
+  - id: create_invoice
+    description: |
+      Log in (admin@example.com / changeme!). Create a new invoice for
+      any existing client (or create one first). Add a line item
+      "Consulting Services" for $500. Save the invoice.
+    success_url_pattern: ".*/invoices.*"
+
+personas:
+  - id: freelancer
+    archetype: "Solo freelancer sending their first invoice"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["wants it to look professional", "checks preview", "confused by tax settings"]
+
+  - id: bookkeeper
+    archetype: "Bookkeeper managing invoices for multiple clients"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["efficient workflow", "uses keyboard navigation", "checks totals carefully"]
+
+  - id: small_biz_owner
+    archetype: "Small business owner who hates paperwork"
+    tech_literacy: low
+    patience_steps: 8
+    quirks: ["minimal effort", "skips optional fields", "just wants to send the invoice"]

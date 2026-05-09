@@ -1,0 +1,55 @@
+# Nextcloud — Cloud platform / file storage + collaboration.
+# Credentials: admin / admin123. SQLite mode. Starter files included.
+
+target_url: http://nextcloud.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/nextcloud
+
+# After login, Nextcloud lands on /apps/dashboard/ or /apps/files/
+success_url_pattern: ".*/apps/(dashboard|files)/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_and_browse_files
+    description: |
+      Log in with username "admin" and password "admin123".
+      Browse the Files section and view any starter files.
+
+  - id: upload_file
+    description: |
+      Log in (admin / admin123). Navigate to Files and create a new
+      text file called "notes.txt" with some content, or upload a file
+      using the + button.
+    success_url_pattern: ".*/apps/files/.*"
+
+  - id: explore_apps
+    description: |
+      Log in (admin / admin123). Explore the installed apps — check out
+      Talk, Calendar, or Contacts from the top navigation bar.
+
+personas:
+  - id: office_worker
+    archetype: "Office worker replacing Google Drive with Nextcloud"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["expects drag-and-drop upload", "looks for sharing", "familiar with cloud storage"]
+
+  - id: privacy_conscious
+    archetype: "Privacy-minded user who chose Nextcloud over Big Tech"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["checks security settings", "explores encryption options", "reads privacy policy"]
+
+  - id: non_technical
+    archetype: "Family member given a Nextcloud account"
+    tech_literacy: low
+    patience_steps: 8
+    quirks: ["confused by the interface", "just wants to see photos", "ignores sidebar"]

@@ -1,0 +1,53 @@
+# Huly — All-in-one project management.
+# Sign up on first visit. MongoDB + ES + MinIO. Frontend on :8080.
+
+target_url: http://huly.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/huly
+
+# After sign-up/login, Huly lands on the workspace
+success_url_pattern: ".*/workbench/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: signup_and_explore
+    description: |
+      Sign up with email "admin@test.com" and password "Test1234!".
+      Create a workspace. Complete any onboarding. Explore the main view.
+
+  - id: create_issue
+    description: |
+      Log in (admin@test.com / Test1234!). Create a new issue or task
+      titled "Implement user authentication" with description and priority.
+
+  - id: explore_modules
+    description: |
+      Log in (admin@test.com / Test1234!). Explore the different modules —
+      HR, Documents, or Chunter (chat). Open each to see what's available.
+
+personas:
+  - id: startup_cto
+    archetype: "Startup CTO setting up project management for a small team"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["wants all-in-one", "explores every module", "compares to Notion + Linear"]
+
+  - id: team_member
+    archetype: "Team member using Huly to track daily work"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["creates issues quickly", "uses mentions", "checks notifications"]
+
+  - id: hr_manager
+    archetype: "HR manager exploring the HR module"
+    tech_literacy: low
+    patience_steps: 12
+    quirks: ["wants employee directory", "confused by dev-oriented features"]

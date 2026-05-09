@@ -1,0 +1,55 @@
+# Twenty CRM — Modern CRM platform.
+# Sign up on first visit. Postgres + Redis. Sample records on workspace creation.
+
+target_url: http://twenty.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/twenty
+
+# After sign-up/login, Twenty lands on /objects/ views
+success_url_pattern: ".*/objects/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: signup_and_explore
+    description: |
+      Sign up with email "admin@test.com" and password "Test1234!".
+      Complete any onboarding steps. Browse the main CRM view with
+      sample records.
+
+  - id: create_contact
+    description: |
+      Log in (admin@test.com / Test1234!) and create a new Person/Contact
+      record with name "Jane Doe" and email "jane@example.com".
+
+  - id: browse_companies
+    description: |
+      Log in (admin@test.com / Test1234!) and navigate to the Companies
+      view. Browse any sample companies. Open one to see its details.
+    success_url_pattern: ".*/objects/compan.*"
+
+personas:
+  - id: sales_rep
+    archetype: "Sales rep moving from spreadsheets to CRM"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["wants to add contacts fast", "looks for import", "compares to Salesforce"]
+
+  - id: startup_founder
+    archetype: "Startup founder evaluating CRM tools"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["explores integrations", "checks API docs", "wants customization"]
+
+  - id: admin_assistant
+    archetype: "Admin assistant entering contacts for the team"
+    tech_literacy: low
+    patience_steps: 15
+    quirks: ["follows forms carefully", "double-checks spelling", "confused by custom fields"]

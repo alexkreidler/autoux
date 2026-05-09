@@ -12,6 +12,7 @@ class CodingPatch(BaseModel):
     cost_usd: float = 0.0
     success: bool           # exited cleanly AND non-empty diff
     error: str | None = None
+    commit_sha: str | None = None
 
 
 class CodingAgent(Protocol):

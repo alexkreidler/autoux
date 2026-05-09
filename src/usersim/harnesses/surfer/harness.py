@@ -50,6 +50,10 @@ _load_env()
 # Default vLLM base — Cloudflare Tunnel to VAST.ai B200 in Japan.
 _DEFAULT_VLLM_BASE = "https://gpu.alexkreidler.com"
 
+# User-Agent sent on vLLM requests — Cloudflare Bot Fight Mode blocks the
+# default Python-urllib UA.
+_UA = "surfer-harness/2.0"
+
 
 @dataclass
 class Config:
@@ -589,7 +593,7 @@ class HoloLocalizer:
         req = urllib.request.Request(
             f"{self.config.vllm_base}/v1/chat/completions",
             data=data,
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "User-Agent": _UA},
         )
 
         start = time.perf_counter()
@@ -635,7 +639,11 @@ class HoloLocalizer:
 
     def health_check(self) -> bool:
         try:
-            urllib.request.urlopen(f"{self.config.vllm_base}/health", timeout=5)
+            req = urllib.request.Request(
+                f"{self.config.vllm_base}/health",
+                headers={"User-Agent": _UA},
+            )
+            urllib.request.urlopen(req, timeout=5)
             return True
         except Exception:
             return False

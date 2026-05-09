@@ -1,0 +1,54 @@
+# Plane — Project management (Jira/Linear alternative).
+# Sign up on first visit. Postgres + Redis + MinIO.
+
+target_url: http://plane.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/plane
+
+# After sign-up/login, Plane lands on a workspace view
+success_url_pattern: ".*/.*/projects.*|.*/.*/issues.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: signup_and_create_workspace
+    description: |
+      Sign up with email "admin@test.com" and password "Test1234!".
+      Create a workspace called "Test Workspace". Complete onboarding.
+
+  - id: create_project_and_issue
+    description: |
+      Log in (admin@test.com / Test1234!). Create a new project called
+      "Backend API". Then create an issue titled "Set up CI/CD pipeline"
+      with priority "High".
+
+  - id: browse_board_view
+    description: |
+      Log in (admin@test.com / Test1234!). Open any project and switch
+      to Board view. Browse the columns and any existing issues.
+
+personas:
+  - id: eng_lead
+    archetype: "Engineering lead evaluating Plane vs Linear"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["compares to Linear", "checks keyboard shortcuts", "wants GitHub integration"]
+
+  - id: developer
+    archetype: "Developer creating and tracking issues"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["wants fast issue creation", "uses labels", "prefers list view"]
+
+  - id: designer
+    archetype: "Designer filing design-related issues"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["wants to attach images", "uses descriptions heavily", "checks assignees"]

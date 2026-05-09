@@ -1,0 +1,65 @@
+# BookStack — Wiki / Knowledge Base.
+# Credentials: admin@admin.com / password. MariaDB.
+# Hierarchy: Shelves > Books > Chapters > Pages.
+
+target_url: http://bookstack.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/bookstack
+
+# After login, BookStack lands on / (shelves view) or /books
+success_dom: "a[href*='logout'], header .user-name"
+success_url_pattern: null
+
+agent:
+  type: claude
+
+deploy:
+  mode: k8s
+  app_name: bookstack
+  dockerfile: dev/docker/Dockerfile
+  prod_namespace: bookstack
+  prod_deployment: bookstack
+  container: bookstack
+  service_port: 80
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_and_browse
+    description: |
+      Log in with email "admin@admin.com" and password "password".
+      Browse the main shelves/books view.
+
+  - id: create_book_and_page
+    description: |
+      Log in (admin@admin.com / password). Create a new Book called
+      "Engineering Handbook". Add a page inside it titled "Onboarding Guide"
+      with some content. Save the page.
+    success_url_pattern: ".*/books/.*"
+
+  - id: search_content
+    description: |
+      Log in (admin@admin.com / password). Use the search feature to
+      search for any term. Browse the results.
+
+personas:
+  - id: writer_careful
+    archetype: "Technical writer documenting processes"
+    tech_literacy: medium
+    patience_steps: 15
+    quirks: ["reads all options", "wants rich text formatting", "checks preview"]
+
+  - id: new_employee
+    archetype: "New employee trying to find documentation"
+    tech_literacy: low
+    patience_steps: 10
+    quirks: ["uses search first", "gets confused by hierarchy", "clicks breadcrumbs"]
+
+  - id: admin_power
+    archetype: "IT admin setting up the wiki for the company"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["checks permissions", "explores settings", "creates shelves first"]

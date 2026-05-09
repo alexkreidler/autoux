@@ -1,0 +1,57 @@
+# PrestaShop — E-commerce platform.
+# Demo mode enabled. Admin at /admin.
+# Credentials: demo@prestashop.com / prestashop_demo. MySQL.
+
+target_url: http://prestashop.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/prestashop
+
+# Storefront success: reaching a product page or cart
+success_url_pattern: null
+success_dom: "body.tax-display-enabled, #product, .cart-summary, #checkout"
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: browse_and_add_to_cart
+    description: |
+      Browse the storefront. Find any product, view its details, and add
+      it to your shopping cart.
+    success_dom: ".cart-summary, #cart .cart-item, .blockcart-content"
+
+  - id: checkout_flow
+    description: |
+      Browse the store, add a product to the cart, and proceed to checkout.
+      Fill in a shipping address (any fake data) and get to the payment step.
+    success_url_pattern: ".*order.*"
+
+  - id: admin_login
+    description: |
+      Navigate to /admin and log in with email "demo@prestashop.com"
+      and password "prestashop_demo". Reach the admin dashboard.
+    success_url_pattern: ".*/admin.*dashboard.*"
+
+personas:
+  - id: shopper_casual
+    archetype: "Casual online shopper browsing for deals"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["scrolls past everything", "looks for prices first", "wants quick checkout"]
+
+  - id: shopper_elderly
+    archetype: "Elderly person shopping online for the first time"
+    tech_literacy: low
+    patience_steps: 15
+    quirks: ["reads everything", "confused by popups", "scared of entering card info"]
+
+  - id: store_admin
+    archetype: "Store owner checking their PrestaShop admin panel"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["goes straight to orders", "checks stock levels", "looks for sales reports"]

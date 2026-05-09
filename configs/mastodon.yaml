@@ -1,0 +1,54 @@
+# Mastodon — Federated social network.
+# Redirects to /auth/sign_in. Postgres + Redis.
+
+target_url: http://mastodon.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/mastodon
+
+# After login, Mastodon lands on /home or /web/home
+success_url_pattern: ".*/home.*|.*/web/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: register_account
+    description: |
+      Register a new account with username "testuser", email "test@test.com",
+      and password "Test1234!". Complete any confirmation steps and reach
+      the home timeline.
+
+  - id: write_post
+    description: |
+      Log in (test@test.com / Test1234!) and write your first post (toot):
+      "Hello Fediverse! This is my first post." Publish it.
+
+  - id: explore_and_follow
+    description: |
+      Log in (test@test.com / Test1234!). Explore the local timeline
+      or directory. Follow any user you find.
+
+personas:
+  - id: twitter_refugee
+    archetype: "Twitter user trying Mastodon for the first time"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["confused by federation", "looks for trending topics", "expects algorithmic timeline"]
+
+  - id: fediverse_enthusiast
+    archetype: "Tech-savvy privacy advocate"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["understands federation", "explores instance settings", "checks content policies"]
+
+  - id: casual_social
+    archetype: "Casual social media user, not tech-savvy"
+    tech_literacy: low
+    patience_steps: 8
+    quirks: ["confused by CW", "doesn't understand instances", "just wants to scroll and post"]

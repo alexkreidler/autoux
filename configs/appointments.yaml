@@ -1,0 +1,57 @@
+# Easy!Appointments — Scheduling / Booking system.
+# Setup wizard on first visit. MySQL backend.
+
+target_url: http://appointments.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/easyappointments
+
+# After setup, lands on the backend calendar or booking page
+success_url_pattern: ".*/index.php/backend.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: complete_setup
+    description: |
+      Complete the Easy!Appointments setup wizard. Create an admin account
+      with first name "Admin", last name "User", email "admin@test.com",
+      and password "Test1234!". Set up a basic service and provider.
+      Finish the wizard.
+
+  - id: book_appointment
+    description: |
+      As a customer, visit the public booking page and book an appointment.
+      Select any available service, pick a date and time, enter your details
+      (name: "John Doe", email: "john@test.com", phone: "555-1234"), and confirm.
+
+  - id: manage_calendar
+    description: |
+      Log in as admin (admin@test.com / Test1234!) and view the backend
+      calendar. Check any existing appointments.
+    success_url_pattern: ".*/index.php/backend.*"
+
+personas:
+  - id: receptionist
+    archetype: "Office receptionist managing appointments"
+    tech_literacy: low
+    patience_steps: 12
+    quirks: ["follows forms step by step", "double-checks dates"]
+
+  - id: customer_rushed
+    archetype: "Customer trying to quickly book an appointment"
+    tech_literacy: medium
+    patience_steps: 8
+    quirks: ["wants the fastest path", "skips optional fields", "confused by time zones"]
+
+  - id: business_owner
+    archetype: "Small business owner setting up online booking"
+    tech_literacy: medium
+    patience_steps: 15
+    quirks: ["wants to customize services", "checks business hours settings"]

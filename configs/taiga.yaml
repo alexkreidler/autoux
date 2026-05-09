@@ -1,0 +1,67 @@
+# Taiga — Agile project management (Scrum + Kanban).
+# Credentials: admin / 123123. Postgres + RabbitMQ.
+
+target_url: http://taiga.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/taiga
+
+# After login, Taiga lands on /projects or the timeline
+success_url_pattern: ".*/project/.*|.*/projects.*"
+success_dom: null
+
+agent:
+  type: claude
+
+# Taiga is a docker-compose repo — the coder patches nginx config in taiga-gateway.
+deploy:
+  mode: k8s
+  app_name: taiga
+  dockerfile: Dockerfile
+  prod_namespace: taiga
+  prod_deployment: taiga-gateway
+  container: nginx
+  service_port: 80
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_and_create_project
+    description: |
+      Log in with username "admin" and password "123123". Create a new
+      project called "Sprint Alpha" using the Scrum template.
+
+  - id: create_user_story
+    description: |
+      Log in (admin / 123123). Open any existing project (or create one).
+      Create a new user story titled "As a user, I want to reset my password"
+      in the backlog.
+    success_url_pattern: ".*/backlog.*"
+
+  - id: use_kanban_board
+    description: |
+      Log in (admin / 123123). Create or open a project using the Kanban
+      template. Create a task card "Design login page" and move it to
+      "In Progress".
+    success_url_pattern: ".*/kanban.*"
+
+personas:
+  - id: scrum_master
+    archetype: "Scrum master setting up sprints for the team"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["wants to configure sprint settings", "looks for burndown charts", "sets up epics"]
+
+  - id: developer
+    archetype: "Developer updating their assigned tasks"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["drags cards on kanban", "wants quick status updates", "ignores wiki"]
+
+  - id: product_owner
+    archetype: "Product owner managing the backlog"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["prioritizes stories", "writes acceptance criteria", "checks velocity"]

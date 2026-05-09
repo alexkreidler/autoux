@@ -1,0 +1,54 @@
+# Plausible — Privacy-first web analytics.
+# Register on first visit. Postgres + ClickHouse.
+
+target_url: http://plausible.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/plausible
+
+# After registration/login, Plausible shows the dashboard or site setup
+success_url_pattern: ".*/sites.*|.*plausible.*/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: register_and_add_site
+    description: |
+      Register a new account with name "Admin", email "admin@test.com",
+      and password "Test1234!". After registration, add a website
+      "example.com" to track.
+
+  - id: login_and_view_dashboard
+    description: |
+      Log in (admin@test.com / Test1234!) and view the analytics
+      dashboard for any added site.
+
+  - id: explore_settings
+    description: |
+      Log in (admin@test.com / Test1234!) and explore the site settings —
+      check goals, custom events, or shared links configuration.
+
+personas:
+  - id: indie_hacker
+    archetype: "Indie developer adding analytics to their side project"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["wants the tracking snippet quickly", "checks if it respects DNT"]
+
+  - id: marketer
+    archetype: "Marketing manager replacing Google Analytics"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["looks for conversion tracking", "wants to share dashboards", "compares features to GA"]
+
+  - id: privacy_advocate
+    archetype: "Privacy-conscious site owner"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["reads privacy policy", "checks cookie usage", "wants GDPR compliance"]

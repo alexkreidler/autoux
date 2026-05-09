@@ -1,0 +1,56 @@
+# Ghost — CMS / Publishing platform.
+# Admin panel at /ghost. MySQL backend. Welcome post included.
+
+target_url: http://ghost.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/ghost
+
+# After setup/login, Ghost admin lands on /ghost/#/dashboard or /ghost/#/posts
+success_url_pattern: ".*/ghost/#/(dashboard|posts|site).*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: complete_setup
+    description: |
+      Navigate to /ghost and complete the Ghost setup. Create your site
+      with title "Test Blog", your name "Admin", email "admin@test.com",
+      and password "Test1234!Test". Finish setup and reach the dashboard.
+
+  - id: create_post
+    description: |
+      Go to /ghost and log in (admin@test.com / Test1234!Test).
+      Create a new blog post titled "Hello World" with some body text.
+      Publish it.
+    success_url_pattern: ".*/ghost/#/(editor|posts).*"
+
+  - id: browse_site
+    description: |
+      Visit the public-facing blog (the main URL, not /ghost).
+      Read the welcome post and navigate to any other page or post.
+
+personas:
+  - id: blogger_newbie
+    archetype: "First-time blogger setting up their site"
+    tech_literacy: low
+    patience_steps: 15
+    quirks: ["reads everything carefully", "hesitates before clicking publish"]
+
+  - id: content_manager
+    archetype: "Marketing manager migrating from WordPress"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["looks for familiar WordPress patterns", "wants to customize theme"]
+
+  - id: developer
+    archetype: "Developer evaluating Ghost as headless CMS"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["looks for API settings", "explores integrations", "checks code injection"]

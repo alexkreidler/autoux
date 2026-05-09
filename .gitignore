@@ -53,6 +53,9 @@ trajectories/
 # --- Archived / dead code -------------------------------------------
 archive/
 
+# --- Target app repos (shallow clones for coder loop) ---------------
+repos/
+
 # --- Editor / OS -----------------------------------------------------
 .DS_Store
 Thumbs.db

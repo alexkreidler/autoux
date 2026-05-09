@@ -1,0 +1,64 @@
+# Listmonk — Email / newsletter manager.
+# Credentials: admin / admin. Go-based. Postgres backend.
+
+target_url: http://listmonk.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/listmonk
+
+# After login, Listmonk lands on /dashboard
+success_url_pattern: ".*/dashboard.*"
+success_dom: null
+
+agent:
+  type: claude
+
+deploy:
+  mode: k8s
+  app_name: listmonk
+  dockerfile: Dockerfile
+  prod_namespace: listmonk
+  prod_deployment: listmonk
+  container: listmonk
+  service_port: 9000
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_to_dashboard
+    description: |
+      Log in with username "admin" and password "admin".
+      Reach the dashboard.
+
+  - id: create_subscriber
+    description: |
+      Log in (admin / admin). Navigate to Subscribers and add a new
+      subscriber with email "test@example.com" and name "Test User".
+    success_url_pattern: ".*/subscribers.*"
+
+  - id: create_campaign
+    description: |
+      Log in (admin / admin). Create a new campaign (newsletter) with
+      subject "Welcome Newsletter" and some body content. Save it as draft.
+    success_url_pattern: ".*/campaigns.*"
+
+personas:
+  - id: marketer
+    archetype: "Email marketer setting up newsletters for a small business"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["looks for templates", "wants to preview before sending"]
+
+  - id: admin_cautious
+    archetype: "Sysadmin deploying Listmonk for the team"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["checks settings first", "looks for SMTP config", "reads docs links"]
+
+  - id: rushed_mobile
+    archetype: "Distracted commuter on phone"
+    tech_literacy: medium
+    patience_steps: 8
+    quirks: ["taps fast", "skims headers", "ignores warnings"]

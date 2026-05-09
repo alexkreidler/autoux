@@ -1,0 +1,66 @@
+# Grafana — Observability dashboards + alerting.
+# Credentials: admin / admin. No data source pre-configured.
+
+target_url: http://grafana.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/grafana
+
+# After login, Grafana lands on / or /dashboards
+success_url_pattern: ".*/d/.*|.*/dashboards.*|.*orgId=.*"
+success_dom: null
+
+agent:
+  type: claude
+
+deploy:
+  mode: k8s
+  app_name: grafana
+  dockerfile: Dockerfile
+  prod_namespace: grafana
+  prod_deployment: grafana
+  container: grafana
+  service_port: 3000
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_and_explore
+    description: |
+      Log in with username "admin" and password "admin". If prompted to
+      change the password, skip or set it to "Admin1234!".
+      Explore the home dashboard.
+
+  - id: add_datasource
+    description: |
+      Log in (admin / admin). Navigate to Configuration > Data Sources
+      and add a test data source (use the built-in "TestData" source if available).
+    success_url_pattern: ".*/datasources.*"
+
+  - id: create_dashboard
+    description: |
+      Log in (admin / admin). Create a new dashboard with one panel.
+      Use any available data source or the random walk test data.
+      Save the dashboard as "Test Dashboard".
+    success_url_pattern: ".*/d/.*"
+
+personas:
+  - id: sre_experienced
+    archetype: "SRE who uses Grafana daily at work"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["knows keyboard shortcuts", "goes straight to data sources", "expects Prometheus"]
+
+  - id: dev_first_time
+    archetype: "Developer setting up monitoring for the first time"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["confused by PromQL", "looks for tutorials", "explores sidebar"]
+
+  - id: manager_viewer
+    archetype: "Engineering manager who just wants to view dashboards"
+    tech_literacy: low
+    patience_steps: 8
+    quirks: ["doesn't want to configure anything", "looks for pre-built dashboards"]

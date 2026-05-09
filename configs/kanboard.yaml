@@ -16,6 +16,7 @@
 
 target_url: http://kanboard.usersim.alexkreidler.com
 target_commit: external
+target_repo: repos/kanboard
 
 # Success criteria — Kanboard's logged-in chrome consistently exposes a
 # logout link with /?controller=AuthController&action=logout. URL pattern
@@ -25,6 +26,15 @@ success_url_pattern: ".*controller=DashboardController.*"
 
 agent:
   type: claude
+
+deploy:
+  mode: k8s
+  app_name: kanboard
+  dockerfile: Dockerfile
+  prod_namespace: kanboard
+  prod_deployment: kanboard
+  container: kanboard
+  service_port: 80
 
 max_turns: 20
 viewport:

@@ -23,6 +23,7 @@ class ClaudeCliAgent:
         started = time.monotonic()
         cmd = [
             "claude", "-p", prompt,
+            "--verbose",
             "--output-format=stream-json",
             "--dangerously-skip-permissions",
             "--allowedTools", "Edit,Write,Read,Glob,Grep",

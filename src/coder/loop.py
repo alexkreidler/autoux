@@ -80,3 +80,13 @@ async def _git_commit(repo_dir: Path, iteration: int, patch: CodingPatch) -> Non
         stderr=asyncio.subprocess.DEVNULL,
     )
     await commit.wait()
+
+    # Capture commit SHA for deploy backends
+    sha_proc = await asyncio.create_subprocess_exec(
+        "git", "rev-parse", "--short", "HEAD",
+        cwd=repo_dir,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+    )
+    sha_out, _ = await sha_proc.communicate()
+    patch.commit_sha = sha_out.decode().strip()

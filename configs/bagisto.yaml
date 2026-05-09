@@ -1,0 +1,57 @@
+# Bagisto — Laravel e-commerce platform.
+# Credentials: admin@example.com / admin123. All-in-one image with bundled MySQL.
+
+target_url: http://bagisto.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/bagisto
+
+# Storefront success: product page or cart
+success_dom: "body, .product-detail, .cart-content"
+success_url_pattern: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: browse_and_buy
+    description: |
+      Browse the storefront. Find any product, view its details, and add
+      it to your cart. Proceed to checkout and fill in shipping details
+      (any fake address).
+
+  - id: admin_dashboard
+    description: |
+      Navigate to /admin and log in with email "admin@example.com" and
+      password "admin123". Explore the admin dashboard.
+    success_url_pattern: ".*/admin/dashboard.*"
+
+  - id: add_product
+    description: |
+      Log in to admin (/admin, admin@example.com / admin123). Create a
+      new simple product with name "Test Widget", SKU "TW-001", and
+      price $19.99.
+    success_url_pattern: ".*/admin/catalog/products.*"
+
+personas:
+  - id: shopper
+    archetype: "Online shopper looking for products"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["browsing casually", "compares prices", "checks reviews"]
+
+  - id: store_owner
+    archetype: "E-commerce store owner managing inventory"
+    tech_literacy: medium
+    patience_steps: 12
+    quirks: ["wants to add products quickly", "checks order status", "looks at sales reports"]
+
+  - id: first_time_buyer
+    archetype: "Elderly person making their first online purchase"
+    tech_literacy: low
+    patience_steps: 15
+    quirks: ["reads everything", "nervous about payment", "needs reassurance"]

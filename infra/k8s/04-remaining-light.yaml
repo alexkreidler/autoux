@@ -135,7 +135,7 @@ spec:
         - containerPort: 27017
         resources:
           requests: { memory: "256Mi", cpu: "100m" }
-          limits: { memory: "512Mi" }
+          limits: { memory: "1Gi" }
 ---
 apiVersion: v1
 kind: Service
@@ -195,8 +195,8 @@ spec:
         - name: ROOT_URL
           value: "http://rocketchat.usersim.alexkreidler.com"
         resources:
-          requests: { memory: "384Mi", cpu: "100m" }
-          limits: { memory: "768Mi" }
+          requests: { memory: "1Gi", cpu: "200m" }
+          limits: { memory: "3Gi" }
 ---
 apiVersion: v1
 kind: Service

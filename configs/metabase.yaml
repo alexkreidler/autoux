@@ -1,0 +1,56 @@
+# Metabase — Analytics / BI dashboards.
+# Setup wizard on first visit. Built-in sample DB + example dashboards.
+
+target_url: http://metabase.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/metabase
+
+# After setup or login, Metabase lands on /collection/root or /question/*
+success_url_pattern: ".*(collection|question|dashboard)/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: complete_setup
+    description: |
+      Complete the Metabase setup wizard. Create an admin account with
+      email "admin@test.com" and password "Test1234!". Use the sample database.
+      Finish the wizard and reach the home page.
+
+  - id: browse_sample_dashboard
+    description: |
+      You are already logged in or need to log in (admin@test.com / Test1234!).
+      Browse to the sample dashboard and view the example analytics.
+
+  - id: ask_a_question
+    description: |
+      Log in (admin@test.com / Test1234!) and use "New question" to create
+      a simple query on the sample database — for example, count of orders
+      grouped by status. Save it.
+    success_url_pattern: ".*/question/.*"
+
+personas:
+  - id: analyst_careful
+    archetype: "Junior data analyst, first time using Metabase"
+    tech_literacy: medium
+    patience_steps: 15
+    quirks: ["reads tooltips", "follows wizard steps carefully"]
+
+  - id: exec_impatient
+    archetype: "VP who just wants to see a dashboard — no patience for setup"
+    tech_literacy: low
+    patience_steps: 8
+    quirks: ["skips instructions", "clicks the biggest button", "types fast"]
+
+  - id: data_engineer
+    archetype: "Experienced data engineer evaluating Metabase"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["looks for SQL mode", "wants to see the schema", "explores settings"]

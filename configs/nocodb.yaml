@@ -1,0 +1,54 @@
+# NocoDB — Airtable alternative / no-code database.
+# Sign up on first visit. SQLite backend.
+
+target_url: http://nocodb.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/nocodb
+
+# After sign-up/login NocoDB lands on the dashboard with tables
+success_url_pattern: ".*#/nc/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: signup_and_create_table
+    description: |
+      Sign up with email "admin@test.com" and password "Test1234!".
+      After signing in, create a new table called "Contacts" with columns
+      Name (text) and Email (email). Add one row.
+
+  - id: login_and_browse
+    description: |
+      Log in (admin@test.com / Test1234!) and browse existing tables.
+      Open any table and view its data.
+
+  - id: create_view
+    description: |
+      Log in (admin@test.com / Test1234!). Open any existing table and
+      create a new Grid view or Gallery view.
+
+personas:
+  - id: citizen_dev
+    archetype: "Non-technical office worker trying to replace spreadsheets"
+    tech_literacy: low
+    patience_steps: 12
+    quirks: ["confused by database terminology", "expects Excel-like behavior"]
+
+  - id: power_user
+    archetype: "Startup PM who has used Airtable extensively"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["looks for keyboard shortcuts", "wants to set field types", "explores filters"]
+
+  - id: rushed_mobile
+    archetype: "Distracted commuter checking quickly"
+    tech_literacy: medium
+    patience_steps: 8
+    quirks: ["taps fast", "skims headers", "ignores warnings"]

@@ -1,0 +1,57 @@
+# OpenProject — Enterprise project management.
+# Credentials: admin / admin123admin123. Auto-seeded demo projects with Gantt charts.
+# Postgres + memcached.
+
+target_url: http://openproject.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/openproject
+
+# After login, OpenProject lands on /projects or the home page
+success_url_pattern: ".*/projects.*|.*/my/page.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: login_and_browse_projects
+    description: |
+      Log in with username "admin" and password "admin123admin123".
+      Browse the list of projects. Open any demo project.
+
+  - id: create_work_package
+    description: |
+      Log in (admin / admin123admin123). Open any demo project and create
+      a new work package (task) titled "Review sprint backlog" with
+      type "Task" and priority "Normal".
+    success_url_pattern: ".*/work_packages.*"
+
+  - id: view_gantt_chart
+    description: |
+      Log in (admin / admin123admin123). Open a demo project and navigate
+      to the Gantt chart view. Browse the timeline.
+    success_url_pattern: ".*/gantt.*|.*/work_packages.*"
+
+personas:
+  - id: project_manager
+    archetype: "Experienced PM migrating from Jira"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["compares to Jira", "looks for agile boards", "wants custom workflows"]
+
+  - id: team_member
+    archetype: "Developer assigned to update tasks in OpenProject"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["just wants to update status", "confused by work package types", "looks for kanban"]
+
+  - id: executive
+    archetype: "Executive checking project status"
+    tech_literacy: low
+    patience_steps: 8
+    quirks: ["wants high-level view", "looks for dashboards and charts", "ignores details"]

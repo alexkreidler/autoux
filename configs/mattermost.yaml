@@ -1,0 +1,55 @@
+# Mattermost — Team chat (Slack alternative).
+# Setup wizard on first visit. Postgres backend.
+
+target_url: http://mattermost.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/mattermost
+
+# After setup/login, Mattermost lands on a channel view
+success_url_pattern: ".*/.*/channels/.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: complete_setup
+    description: |
+      Complete the Mattermost setup. Create an admin account with
+      email "admin@test.com", username "admin", and password "Test1234!".
+      Create a team called "Test Team". Reach the main chat view.
+
+  - id: send_message
+    description: |
+      Log in (admin@test.com or admin / Test1234!) and send a message
+      "Hello World!" in the Town Square channel.
+
+  - id: create_channel
+    description: |
+      Log in (admin / Test1234!) and create a new public channel called
+      "engineering". Send a first message in it.
+    success_url_pattern: ".*channels/engineering.*"
+
+personas:
+  - id: team_lead
+    archetype: "Team lead setting up Mattermost for the engineering team"
+    tech_literacy: high
+    patience_steps: 12
+    quirks: ["wants to configure integrations", "sets up channels methodically"]
+
+  - id: new_hire
+    archetype: "New employee joining the team chat"
+    tech_literacy: medium
+    patience_steps: 10
+    quirks: ["confused by threads vs channels", "looks for people to DM", "expects Slack behavior"]
+
+  - id: non_tech
+    archetype: "Marketing person who just wants to send messages"
+    tech_literacy: low
+    patience_steps: 8
+    quirks: ["just wants to type and send", "ignores sidebar options", "confused by channel hierarchy"]

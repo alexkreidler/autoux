@@ -35,8 +35,8 @@ spec:
         ports:
         - containerPort: 3306
         resources:
-          requests: { memory: "256Mi", cpu: "100m" }
-          limits: { memory: "512Mi" }
+          requests: { memory: "512Mi", cpu: "100m" }
+          limits: { memory: "1Gi" }
 ---
 apiVersion: v1
 kind: Service
@@ -139,7 +139,7 @@ spec:
       - name: erpnext
         image: frappe/erpnext:v15
         ports:
-        - containerPort: 8080
+        - containerPort: 8000
         env:
         - name: DB_HOST
           value: erpnext-db
@@ -154,8 +154,8 @@ spec:
         - name: FRAPPE_SITE_NAME_HEADER
           value: "erpnext.usersim.alexkreidler.com"
         resources:
-          requests: { memory: "512Mi", cpu: "200m" }
-          limits: { memory: "1536Mi" }
+          requests: { memory: "1Gi", cpu: "300m" }
+          limits: { memory: "3Gi" }
 ---
 apiVersion: v1
 kind: Service
@@ -166,7 +166,7 @@ spec:
   selector:
     app: erpnext
   ports:
-  - port: 8080
+  - port: 8000
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -184,7 +184,7 @@ spec:
           service:
             name: erpnext
             port:
-              number: 8080
+              number: 8000
 ---
 # === ZAMMAD ===
 apiVersion: v1
@@ -220,8 +220,8 @@ spec:
         ports:
         - containerPort: 5432
         resources:
-          requests: { memory: "64Mi", cpu: "50m" }
-          limits: { memory: "256Mi" }
+          requests: { memory: "128Mi", cpu: "50m" }
+          limits: { memory: "512Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -251,17 +251,19 @@ spec:
     spec:
       containers:
       - name: elasticsearch
-        image: bitnami/elasticsearch:8
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
         env:
         - name: discovery.type
           value: single-node
+        - name: xpack.security.enabled
+          value: "false"
         - name: ES_JAVA_OPTS
-          value: "-Xms256m -Xmx256m"
+          value: "-Xms512m -Xmx512m"
         ports:
         - containerPort: 9200
         resources:
-          requests: { memory: "384Mi", cpu: "100m" }
-          limits: { memory: "512Mi" }
+          requests: { memory: "512Mi", cpu: "100m" }
+          limits: { memory: "1Gi" }
 ---
 apiVersion: v1
 kind: Service
@@ -362,19 +364,7 @@ spec:
       initContainers:
       - name: init
         image: ghcr.io/zammad/zammad:latest
-        command: ["bash", "-c", "rsync -a /opt/zammad/ /shared/ || true"]
-        volumeMounts:
-        - name: zammad-data
-          mountPath: /shared
-        resources:
-          requests: { memory: "128Mi", cpu: "50m" }
-          limits: { memory: "512Mi" }
-      containers:
-      - name: railsserver
-        image: ghcr.io/zammad/zammad:latest
-        command: ["zammad", "run", "rails"]
-        ports:
-        - containerPort: 3000
+        args: ["zammad-init"]
         env:
         - name: POSTGRESQL_HOST
           value: zammad-db
@@ -396,8 +386,53 @@ spec:
         - name: zammad-data
           mountPath: /opt/zammad
         resources:
-          requests: { memory: "384Mi", cpu: "100m" }
-          limits: { memory: "768Mi" }
+          requests: { memory: "512Mi", cpu: "200m" }
+          limits: { memory: "2Gi" }
+      containers:
+      - name: railsserver
+        image: ghcr.io/zammad/zammad:latest
+        args: ["zammad-railsserver"]
+        ports:
+        - containerPort: 3000
+        env: &zammad-env
+        - name: POSTGRESQL_HOST
+          value: zammad-db
+        - name: POSTGRESQL_DB
+          value: zammad
+        - name: POSTGRESQL_USER
+          value: zammad
+        - name: POSTGRESQL_PASS
+          value: zammad
+        - name: ELASTICSEARCH_HOST
+          value: zammad-es
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: MEMCACHE_SERVERS
+          value: "zammad-memcached:11211"
+        - name: REDIS_URL
+          value: "redis://zammad-redis:6379"
+        volumeMounts: &zammad-mounts
+        - name: zammad-data
+          mountPath: /opt/zammad
+        resources:
+          requests: { memory: "512Mi", cpu: "200m" }
+          limits: { memory: "1536Mi" }
+      - name: scheduler
+        image: ghcr.io/zammad/zammad:latest
+        args: ["zammad-scheduler"]
+        env: *zammad-env
+        volumeMounts: *zammad-mounts
+        resources:
+          requests: { memory: "128Mi", cpu: "50m" }
+          limits: { memory: "512Mi" }
+      - name: websocket
+        image: ghcr.io/zammad/zammad:latest
+        args: ["zammad-websocket"]
+        env: *zammad-env
+        volumeMounts: *zammad-mounts
+        resources:
+          requests: { memory: "128Mi", cpu: "50m" }
+          limits: { memory: "384Mi" }
       volumes:
       - name: zammad-data
         emptyDir: {}
@@ -465,8 +500,8 @@ spec:
         ports:
         - containerPort: 5432
         resources:
-          requests: { memory: "64Mi", cpu: "50m" }
-          limits: { memory: "256Mi" }
+          requests: { memory: "128Mi", cpu: "50m" }
+          limits: { memory: "512Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -500,8 +535,8 @@ spec:
         ports:
         - containerPort: 6379
         resources:
-          requests: { memory: "8Mi", cpu: "10m" }
-          limits: { memory: "64Mi" }
+          requests: { memory: "32Mi", cpu: "10m" }
+          limits: { memory: "128Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -529,41 +564,45 @@ spec:
       labels:
         app: discourse
     spec:
-      containers:
-      - name: discourse
-        image: bitnami/discourse:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: DISCOURSE_HOST
+      initContainers:
+      - name: discourse-setup
+        image: discourse/discourse:2026.1.3-amd64
+        command: ["bash", "-c", "cd /var/www/discourse && bundle exec rake db:migrate && bundle exec rake admin:create_noninteractive[admin,admin@usersim.local,admin12345] || true"]
+        env: &discourse-env
+        - name: DISCOURSE_HOSTNAME
           value: "discourse.usersim.alexkreidler.com"
-        - name: DISCOURSE_DATABASE_HOST
+        - name: DISCOURSE_DB_HOST
           value: "discourse-db"
-        - name: DISCOURSE_DATABASE_NAME
+        - name: DISCOURSE_DB_NAME
           value: "discourse"
-        - name: DISCOURSE_DATABASE_USER
+        - name: DISCOURSE_DB_USERNAME
           value: "discourse"
-        - name: DISCOURSE_DATABASE_PASSWORD
+        - name: DISCOURSE_DB_PASSWORD
           value: "discourse"
         - name: DISCOURSE_REDIS_HOST
           value: "discourse-redis"
-        - name: DISCOURSE_REDIS_PORT_NUMBER
+        - name: DISCOURSE_REDIS_PORT
           value: "6379"
-        - name: DISCOURSE_USERNAME
-          value: "admin"
-        - name: DISCOURSE_PASSWORD
-          value: "admin12345"
-        - name: DISCOURSE_EMAIL
+        - name: DISCOURSE_DEVELOPER_EMAILS
           value: "admin@usersim.local"
-        - name: DISCOURSE_SMTP_HOST
+        - name: DISCOURSE_SMTP_ADDRESS
           value: "localhost"
         - name: DISCOURSE_SMTP_PORT
           value: "25"
-        - name: BITNAMI_DEBUG
-          value: "true"
+        - name: DISCOURSE_SMTP_ENABLE_START_TLS
+          value: "false"
         resources:
-          requests: { memory: "512Mi", cpu: "200m" }
-          limits: { memory: "1536Mi" }
+          requests: { memory: "1Gi", cpu: "200m" }
+          limits: { memory: "3Gi" }
+      containers:
+      - name: discourse
+        image: discourse/discourse:2026.1.3-amd64
+        ports:
+        - containerPort: 80
+        env: *discourse-env
+        resources:
+          requests: { memory: "1Gi", cpu: "300m" }
+          limits: { memory: "3Gi" }
 ---
 apiVersion: v1
 kind: Service
@@ -574,7 +613,7 @@ spec:
   selector:
     app: discourse
   ports:
-  - port: 3000
+  - port: 80
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -592,7 +631,7 @@ spec:
           service:
             name: discourse
             port:
-              number: 3000
+              number: 80
 ---
 # === HULY ===
 apiVersion: v1

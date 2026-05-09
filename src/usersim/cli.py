@@ -3,6 +3,7 @@
 Examples:
     uv run python -m usersim run --config configs/taxcaster.yaml --out runs/iter_000
     uv run python -m usersim debug --config configs/taxcaster.yaml --persona rushed_mobile --task single_w2_basic --out runs/spike_001
+    uv run python -m usersim loop --config configs/kanboard.yaml --repo /path/to/kanboard --iterations 5
 """
 from __future__ import annotations
 
@@ -348,6 +349,111 @@ def filter_app_tasks(tasks: list[Task], wanted_csv: str | None) -> list[Task]:
     return [t for t in tasks if t.id in wanted]
 
 
+def cmd_loop(args: argparse.Namespace) -> int:
+    """Closed-loop: MAP+REDUCE → CODER → DEPLOY → repeat."""
+    from coder.claude_cli import ClaudeCliAgent
+    from coder.deploy import make_backend
+    from coder.loop import run_loop as coder_run_loop
+
+    config = yaml.safe_load(Path(args.config).read_text())
+    personas = _load_config_personas(config)
+    tasks = _load_tasks(config)
+    runs_root = Path(args.runs_dir)
+
+    agent_spec = config.get("agent", {"type": "northstar"})
+    if isinstance(agent_spec, str):
+        agent_spec = {"type": agent_spec}
+    if args.agent:
+        agent_spec = {**agent_spec, "type": args.agent}
+    if args.agent_endpoint:
+        agent_spec["endpoint"] = args.agent_endpoint
+    client = get_client(agent_spec)
+    browser_provider = KernelProvider()
+
+    repo_dir = Path(args.repo).resolve() if args.repo else None
+    if repo_dir is None:
+        repo_dir = Path(config.get("target_repo", "")).resolve() if config.get("target_repo") else None
+
+    deploy_backend = make_backend(config.get("deploy"))
+
+    coding_agent = ClaudeCliAgent()
+    prev_feedback_path: Path | None = None
+
+    for iteration in range(args.start_iter, args.start_iter + args.iterations):
+        iter_dir = runs_root / f"iter_{iteration:03d}"
+        print(f"\n{'='*60}")
+        print(f"[loop] === ITERATION {iteration} ===")
+        print(f"{'='*60}")
+
+        # --- MAP + REDUCE ---
+        print(f"[loop] MAP: {len(personas)} personas × {len(tasks)} tasks, concurrency={args.concurrency}")
+        trajectories = asyncio.run(run_iteration(
+            target_url=config["target_url"],
+            target_commit=config.get("target_commit", "external"),
+            personas=personas,
+            tasks=tasks,
+            client=client,
+            browser_provider=browser_provider,
+            out_dir=iter_dir,
+            concurrency=args.concurrency,
+            viewport_width=config.get("viewport", {}).get("width", 1280),
+            viewport_height=config.get("viewport", {}).get("height", 800),
+            max_turns=args.max_turns or config.get("max_turns", 20),
+            stuck_threshold=args.stuck_threshold,
+            patience_override=args.patience,
+        ))
+
+        prev = load_prev_feedback(prev_feedback_path) if prev_feedback_path else None
+        fb = aggregate(
+            trajectories,
+            iteration=iteration,
+            target_commit=config.get("target_commit", "external"),
+            out_dir=iter_dir,
+            prev_feedback=prev,
+        )
+        feedback_path = iter_dir / "feedback.json"
+        print(f"[loop] REDUCE: success_gameable={fb.metrics.success_rate_gameable:.1%} "
+              f"abandonment={fb.metrics.abandonment_rate:.1%}")
+
+        # --- CODER ---
+        patch = None
+        if repo_dir and repo_dir.is_dir():
+            print(f"[loop] CODER: patching {repo_dir} with feedback from {feedback_path}")
+            patch = asyncio.run(coder_run_loop(
+                repo_dir=repo_dir,
+                feedback_path=feedback_path,
+                iteration=iteration,
+                agent=coding_agent,
+            ))
+            if patch.success:
+                print(f"[loop] CODER: patch applied ({len(patch.files_changed)} files, {patch.duration_ms}ms, ${patch.cost_usd:.2f})")
+            else:
+                print(f"[loop] CODER: patch failed — {patch.error or 'empty diff'}")
+        else:
+            print(f"[loop] CODER: skipped (no --repo or target_repo in config)")
+
+        # --- DEPLOY ---
+        if patch and patch.success:
+            print(f"[loop] DEPLOY: building and deploying patched image...")
+            result = asyncio.run(deploy_backend.deploy(repo_dir, patch, iteration))
+            if result.success:
+                tag = result.image_tag or "local"
+                url = result.service_url or config["target_url"]
+                print(f"[loop] DEPLOY: success — image={tag} url={url} ({result.duration_ms}ms)")
+            else:
+                print(f"[loop] DEPLOY: failed — {result.error}")
+        elif patch and not patch.success:
+            print(f"[loop] DEPLOY: skipped (coder patch failed)")
+        else:
+            print(f"[loop] DEPLOY: skipped (no patch)")
+
+        prev_feedback_path = feedback_path
+
+    print(f"\n[loop] Done. {args.iterations} iterations in {runs_root}/")
+    return 0
+
+
+
 def main() -> int:
     p = argparse.ArgumentParser(prog="usersim")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -401,6 +507,24 @@ def main() -> int:
     ps.add_argument("--dry-run", action="store_true",
                     help="print the planned (app, persona, task) triples and exit; no rollouts")
     ps.set_defaults(func=cmd_sweep)
+
+    pl = sub.add_parser("loop", help="closed-loop: MAP+REDUCE → CODER → redeploy → repeat")
+    pl.add_argument("--config", required=True, help="app config YAML")
+    pl.add_argument("--repo", help="path to target app source repo (overrides config target_repo)")
+    pl.add_argument("--runs-dir", default="runs", help="root dir for iteration outputs")
+    pl.add_argument("--iterations", type=int, default=3, help="number of iterations to run")
+    pl.add_argument("--start-iter", type=int, default=0, help="starting iteration number")
+    pl.add_argument("--concurrency", type=int, default=5)
+    pl.add_argument("--agent", choices=available_clients(),
+                    help="agent provider; overrides config")
+    pl.add_argument("--agent-endpoint", help="agent endpoint URL")
+    pl.add_argument("--max-turns", type=int, default=None)
+    pl.add_argument("--stuck-threshold", type=int, default=3)
+    pl.add_argument("--patience", type=int, default=None)
+    pl.add_argument("--redeploy", help="shell command to redeploy target app after each coder patch")
+    pl.add_argument("--coder-timeout", type=float, default=300.0,
+                    help="timeout in seconds for the coding agent per iteration")
+    pl.set_defaults(func=cmd_loop)
 
     args = p.parse_args()
     return args.func(args)

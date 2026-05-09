@@ -1,0 +1,57 @@
+# Chatwoot — Omni-channel customer support.
+# Sign up on first visit. Postgres + Redis.
+
+target_url: http://chatwoot.usersim.alexkreidler.com
+target_commit: external
+target_repo: repos/chatwoot
+
+# After sign-up/login, Chatwoot lands on /app/accounts/*/dashboard
+success_url_pattern: ".*/app/accounts/.*/dashboard.*"
+success_dom: null
+
+agent:
+  type: claude
+
+max_turns: 20
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: signup_and_setup
+    description: |
+      Sign up with name "Admin User", email "admin@test.com", and
+      password "Test1234!". Complete any onboarding steps (company name,
+      channel setup). Reach the main dashboard.
+
+  - id: create_inbox
+    description: |
+      Log in (admin@test.com / Test1234!). Set up a new Website inbox
+      channel. Name it "Support Widget". Complete the configuration.
+    success_url_pattern: ".*/settings/inboxes.*"
+
+  - id: browse_conversations
+    description: |
+      Log in (admin@test.com / Test1234!) and navigate to the
+      Conversations view. Browse any existing conversations or check
+      the empty state.
+    success_url_pattern: ".*/conversations.*"
+
+personas:
+  - id: support_lead
+    archetype: "Customer support team lead setting up Chatwoot"
+    tech_literacy: medium
+    patience_steps: 15
+    quirks: ["wants to set up canned responses", "checks agent assignment", "explores automation"]
+
+  - id: solo_founder
+    archetype: "Solo founder adding live chat to their SaaS"
+    tech_literacy: high
+    patience_steps: 10
+    quirks: ["wants quick widget setup", "checks API/webhook integration", "minimal config"]
+
+  - id: support_agent
+    archetype: "Support agent learning the new tool"
+    tech_literacy: low
+    patience_steps: 12
+    quirks: ["clicks around to explore", "confused by channels vs inboxes", "looks for shortcuts"]
