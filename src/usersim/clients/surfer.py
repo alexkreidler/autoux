@@ -312,6 +312,21 @@ class SurferSession:
             desc = f"{action} executed"
             if px is not None:
                 desc = f"{action} at ({px}, {py})"
+            # Nudge: if the agent clicked something that sounds like a text
+            # input, it almost certainly meant to `fill` — the model often
+            # hallucinates "field filled" after a bare click. This caught
+            # ~50% of stuck nextcloud/bookstack login trajectories.
+            element_desc_lower = (action_data.get("element") or "").lower()
+            text_input_keywords = (
+                "field", "input", "textbox", "text box", "search box",
+                "username", "password", "email", "login id",
+            )
+            if action == "click" and any(kw in element_desc_lower for kw in text_input_keywords):
+                desc += (
+                    " — NOTE: clicking a text input does NOT type text. "
+                    "If you intended to enter a value, your next action MUST be "
+                    "`fill` with a `text` field. The input is still empty."
+                )
             self._messages.append({
                 "role": "user",
                 "content": f"Action result: {desc}",

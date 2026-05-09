@@ -108,9 +108,24 @@ The browser viewport is {viewport_w}x{viewport_h} pixels.
 ## Available Actions
 You output a JSON object with your reasoning and chosen action.
 
+### CRITICAL — click vs fill on form inputs
+**Clicking a text field does NOT enter text.** Username, password, email, search
+boxes — every form input requires `action: "fill"` with a `text` parameter.
+A `click` only moves the cursor; it never types.
+
+WRONG (this will leave the field empty even though you reasoned about filling):
+  {{"thought": "fill username", "action": "click", "element": "the username field"}}
+RIGHT:
+  {{"thought": "fill username", "action": "fill", "element": "the username field", "text": "admin"}}
+
+If you ever reason "the field is now filled" right after a `click` action,
+you were wrong — the field is still empty. Re-emit as `fill` with text.
+
+### Action list
+
 Actions that need a click target (the localizer will find exact coordinates):
-1. **click** — Click on an element. Requires: "element" (describe PRECISELY what to click, e.g. "the search input field", "the Submit button with blue background", "the 'Comments' link next to '53 comments'")
-2. **fill** — Fill a form field with text (more reliable than click+type). Requires: "element" (which field), "text" (what to type). Optional: "press_enter" (true/false)
+1. **click** — Click on a button, link, checkbox, or other non-text-input element. Requires: "element" (describe PRECISELY what to click, e.g. "the Submit button with blue background", "the 'Comments' link next to '53 comments'"). NEVER use `click` on text input fields — use `fill` instead.
+2. **fill** — Fill a form field with text. Required for ALL text inputs, search boxes, password fields, login forms. Requires: "element" (which field), "text" (what to type). Optional: "press_enter" (true/false).
 
 Actions that don't need coordinates:
 3. **type** — Type text into the currently focused element. Requires: "text". Optional: "press_enter" (true/false)
