@@ -127,68 +127,15 @@
                 font-family: "JetBrains Mono", Menlo, monospace; }
   .topo .arrow { color: var(--dim); text-align: center; font-size: 1.3rem;
                  display: flex; align-items: center; justify-content: center; }
-  /* Citation cards (priors slide) */
-  .priors { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9em 1.2em;
-            margin-top: 0.4em; }
-  .priors .card { background: linear-gradient(180deg, var(--surface) 0%, #101010 100%);
-                  border: 1px solid var(--border); border-left: 3px solid var(--accent);
-                  border-radius: 8px; padding: 0.85em 1.1em; }
-  .priors .card.warn { border-left-color: var(--warn); }
-  .priors .card.ok   { border-left-color: var(--ok); }
-  .priors .claim { font-size: 1.0rem; color: #fff; font-weight: 600;
-                   margin-bottom: 0.4em; line-height: 1.3; }
-  .priors .cite { font-size: 0.8rem; color: #b8b8b8; line-height: 1.5; }
-  /* Numbered novelty cards */
-  .novel { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8em 1.1em;
-           counter-reset: novel; margin-top: 0.4em; }
-  .novel .card { background: var(--surface); border: 1px solid var(--border);
-                 border-radius: 8px; padding: 0.85em 1.0em 0.85em 3em;
-                 position: relative; }
-  .novel .card::before {
-    counter-increment: novel; content: counter(novel, decimal-leading-zero);
-    position: absolute; left: 0.95em; top: 0.85em;
-    color: var(--accent); font-family: "JetBrains Mono", monospace;
-    font-size: 0.95rem; font-weight: 600;
-  }
-  .novel .h { color: #fff; font-weight: 600; font-size: 0.98rem;
-              margin-bottom: 0.25em; line-height: 1.3; }
-  .novel .b { color: #c5c5c5; font-size: 0.85rem; line-height: 1.5; }
-  .novel .full { grid-column: 1 / -1; }
-  /* Two-column callouts */
-  .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; }
-  .cols-2 .col { background: var(--surface); border: 1px solid var(--border);
-                 border-radius: 8px; padding: 1em 1.2em; }
-  .cols-2 .col h3 { color: #fff; font-size: 1.1rem; font-weight: 600;
-                     margin: 0 0 0.6em; padding-bottom: 0.3em;
-                     border-bottom: 1px solid var(--border); }
-  .cols-2 .col.warn { border-left: 3px solid var(--warn); }
-  .cols-2 .col.ok { border-left: 3px solid var(--ok); }
-  .cols-2 .col.accent { border-left: 3px solid var(--accent); }
-  /* Dashboard / UI gallery */
-  .ui-gallery { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.2em;
-                margin-top: 0.4em; align-items: stretch; }
-  .ui-gallery .frame { background: var(--surface); border: 1px solid var(--border);
-                       border-radius: 10px; padding: 0.7em; }
-  .ui-gallery .frame .cap { font-size: 0.78rem; color: var(--dim);
-                            text-transform: uppercase; letter-spacing: 0.05em;
-                            margin-bottom: 0.5em; padding: 0 0.2em; }
-  .ui-gallery .frame img { display: block; width: 100%; height: auto;
-                           max-height: 60vh; object-fit: contain;
-                           border-radius: 6px; background: #f5f1e8; }
-  .ui-gallery .frame.dark img { background: #0a0a0a; }
-  .stack { display: flex; flex-direction: column; gap: 1.2em; }
-  /* Agent cards */
-  .agents { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.7em;
-            margin-top: 0.5em; }
-  .agents .agent { background: var(--surface); border: 1px solid var(--border);
-                   border-radius: 8px; padding: 0.7em 0.9em; }
-  .agents .agent .n { font-family: "JetBrains Mono", Menlo, monospace;
-                       color: var(--accent); font-size: 0.95rem; font-weight: 600;
-                       margin-bottom: 0.2em; }
-  .agents .agent .m { color: #c8c8c8; font-size: 0.78rem; line-height: 1.4;
-                       margin-bottom: 0.3em; }
-  .agents .agent .g { font-size: 0.72rem; color: var(--dim);
-                       text-transform: uppercase; letter-spacing: 0.05em; }
+  /* App domain groups */
+  .app-group { background: var(--surface); border: 1px solid var(--border);
+               border-radius: 8px; padding: 0.7em 0.8em; }
+  .app-group-label { font-size: 0.7rem; color: var(--accent); letter-spacing: 0.04em;
+                     text-transform: uppercase; font-weight: 600; margin-bottom: 0.5em; }
+  .app-group .chip { display: inline-block; font-size: 0.78rem; color: var(--text);
+                     background: rgba(255,255,255,0.04); padding: 0.15em 0.5em;
+                     border-radius: 3px; margin: 0.15em 0.15em 0 0;
+                     font-family: "JetBrains Mono", Menlo, monospace; }
   /* Keyboard hint */
   .hint { position: fixed; bottom: 1vh; left: 1vw; color: var(--dim);
           font-size: 0.7rem; opacity: 0.5; pointer-events: none; }
@@ -196,7 +143,7 @@
 </head>
 <body>
 
-<!-- 1. TITLE (cinematic) -->
+<!-- 01. TITLE -->
 <section class="slide hero">
   <video class="bg" autoplay loop muted playsinline preload="auto">
     <source src="../demo/cinematic_intro.mp4" type="video/mp4">
@@ -205,42 +152,35 @@
     <h1>AutoUX</h1>
     <div class="sub">A CUA UserSim</div>
     <div class="sub" style="margin-top:1.4em">Alex Kreidler · David Bai · 2026</div>
-    <div class="repo"><a href="https://github.com/alexkreidler/computer-hack">github.com/alexkreidler/computer-hack</a></div>
+    <div class="repo"><a href="https://github.com/alexkreidler/autoux">github.com/alexkreidler/autoux</a></div>
   </div>
   <div class="num">01</div>
 </section>
 
-<!-- 2. PRIORS -->
+<!-- 02. PRIORS -->
 <section class="slide">
-  <h2>Priors we hold (and where they're validated)</h2>
-  <div class="priors">
-    <div class="card">
-      <div class="claim">CUAs can drive real browsers tractably</div>
-      <div class="cite"><a href="https://www.anthropic.com/news/3-5-models-and-computer-use">Anthropic computer-use</a> (2024) · <a href="https://os-world.github.io/">OSWorld</a> ~38% on web · <a href="https://arxiv.org/abs/2401.13919">WebVoyager</a> · <a href="https://github.com/browser-use/browser-use">Browser-Use</a></div>
-    </div>
-    <div class="card ok">
-      <div class="claim">Planner + grounder beats end-to-end vision for pixel work</div>
-      <div class="cite"><a href="https://www.hcompany.ai/">H Company Holo3</a> · <a href="https://www.microsoft.com/en-us/research/publication/magentic-one-a-generalist-multi-agent-system-for-solving-complex-tasks/">Magentic-One</a> (Microsoft, 2024). We ship this as the <code>surfer</code> agent.</div>
-    </div>
-    <div class="card">
-      <div class="claim">Personas produce measurably different UX trajectories</div>
-      <div class="cite"><a href="https://arxiv.org/abs/2406.20094">PersonaHub</a> (Tencent, 2024) · HCI persona literature (<a href="https://www.cooper.com/journal/2003/8/the_origin_of_personas/">Cooper, 1999</a>). We see ~4× variance in step-count across personas on identical tasks.</div>
-    </div>
-    <div class="card">
-      <div class="claim">LLM-as-user-simulator is a viable eval pattern for chat</div>
-      <div class="cite"><a href="https://github.com/confident-ai/deepeval">DeepEval</a> · <a href="https://langwatch.ai/">LangWatch</a> · <a href="https://mlflow.org/docs/latest/llms/llm-evaluate/">MLflow eval</a>. We extend the pattern: text → browser.</div>
-    </div>
-    <div class="card warn" style="grid-column: 1 / -1;">
-      <div class="claim">Reward hacking is real in iterative agent loops</div>
-      <div class="cite"><a href="https://arxiv.org/abs/2209.13085">Skalse 2022</a> · <a href="https://deepmind.google/discover/blog/specification-gaming-the-flip-side-of-ai-ingenuity/">DeepMind specification gaming</a> · <a href="https://arxiv.org/abs/2310.13548">Anthropic auditing</a>. Our held-out Stage-2 judge is the firewall.</div>
-    </div>
-  </div>
+  <h2>Priors we hold</h2>
+  <table>
+    <thead><tr><th style="width:28%">prior</th><th>grounding</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CUAs can drive real browsers tractably</strong></td>
+          <td><a href="https://www.anthropic.com/news/3-5-models-and-computer-use">Anthropic computer-use</a> (2024) · <a href="https://os-world.github.io/">OSWorld</a> ~38% on web · <a href="https://arxiv.org/abs/2401.13919">WebVoyager</a> · <a href="https://github.com/browser-use/browser-use">Browser-Use</a></td></tr>
+      <tr><td><strong>Planner + grounder beats end-to-end vision</strong> for pixel work</td>
+          <td><a href="https://www.hcompany.ai/">H Company Holo3</a> · <a href="https://www.microsoft.com/en-us/research/publication/magentic-one-a-generalist-multi-agent-system-for-solving-complex-tasks/">Magentic-One</a> (Microsoft, 2024). We ship this as the <code>surfer</code> agent.</td></tr>
+      <tr><td><strong>Personas produce measurably different UX trajectories</strong></td>
+          <td><a href="https://arxiv.org/abs/2406.20094">PersonaHub</a> (Tencent, 2024) · HCI persona literature (<a href="https://www.cooper.com/journal/2003/8/the_origin_of_personas/">Cooper, 1999</a>). We see ~4× variance in step-count across personas on identical tasks.</td></tr>
+      <tr><td><strong>LLM-as-user-simulator is a viable eval pattern</strong> for chat</td>
+          <td><a href="https://github.com/confident-ai/deepeval">DeepEval</a> · <a href="https://langwatch.ai/">LangWatch</a> · <a href="https://mlflow.org/docs/latest/llms/llm-evaluate/">MLflow eval</a>. We extend the pattern: text → browser.</td></tr>
+      <tr><td><strong>Reward hacking is real</strong> in iterative agent loops</td>
+          <td><a href="https://arxiv.org/abs/2209.13085">Skalse 2022</a> · <a href="https://deepmind.google/discover/blog/specification-gaming-the-flip-side-of-ai-ingenuity/">DeepMind specification gaming</a> · <a href="https://arxiv.org/abs/2310.13548">Anthropic auditing</a>. Our held-out judge is the firewall.</td></tr>
+    </tbody>
+  </table>
   <div class="num">02</div>
 </section>
 
-<!-- 3. THE GAP -->
+<!-- 03. PRIOR WORK -->
 <section class="slide">
-  <h2>The gap</h2>
+  <h2>Prior work</h2>
   <p class="lead">Every prior <em>UserSim</em> project we found is text-only chat eval. <strong>None drive a real browser.</strong></p>
   <table>
     <thead><tr><th>project</th><th>shape</th><th>browser?</th></tr></thead>
@@ -257,7 +197,7 @@
   <div class="num">03</div>
 </section>
 
-<!-- 4. ARCHITECTURE -->
+<!-- 04. ARCHITECTURE -->
 <section class="slide" style="padding: 3vh 4vw;">
   <h2>Architecture</h2>
   <div class="mermaid" style="margin: 0.3em 0;">
@@ -354,93 +294,128 @@ flowchart LR
   class TRAJ,FB,TARGET data
   class G2 warn
   </div>
-  <p class="small"><a href="https://github.com/alexkreidler/computer-hack/tree/main/src/usersim">engine</a> · <a href="https://github.com/alexkreidler/computer-hack/tree/main/src/coder">coder harness</a> · <a href="https://github.com/alexkreidler/computer-hack/tree/main/apps/dashboard">dashboard</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/configs/apps/registry.jsonl">app registry</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/configs/personas/seed.jsonl">persona registry</a></p>
+  <p class="small"><a href="https://github.com/alexkreidler/autoux/tree/main/src/usersim">engine</a> · <a href="https://github.com/alexkreidler/autoux/tree/main/src/coder">coder harness</a> · <a href="https://github.com/alexkreidler/autoux/tree/main/apps/dashboard">dashboard</a> · <a href="https://github.com/alexkreidler/autoux/blob/main/configs/apps/registry.jsonl">app registry</a> · <a href="https://github.com/alexkreidler/autoux/blob/main/configs/personas/seed.jsonl">persona registry</a></p>
   <div class="num">04</div>
 </section>
 
-<!-- 4b. INFRASTRUCTURE -->
+<!-- 05. APPS -->
 <section class="slide">
-  <h2>Infrastructure</h2>
-  <p class="lead">Self-hosted end-to-end. <strong>K8s cluster — 26 OSS apps deployed, 21 currently green</strong> · <strong>B200 on VAST.ai</strong> serving SOTA open-source grounder · <strong>Cloudflare tunnel</strong> for the public endpoint.</p>
-  <div class="topo">
-    <div class="box accent-l">
-      <div class="label">orchestrator</div>
-      <div class="title">UserSim engine</div>
-      <div class="desc">asyncio fanout, semaphore-bounded; one Kernel session per (persona × task × app). Streaming JSONL + replay mp4 per cell.</div>
-      <span class="chip">src/usersim</span>
+  <h2>Apps</h2>
+  <p class="lead"><strong>26 real OSS web apps</strong> deployed to our K8s cluster — each in its own namespace at <code>*.usersim.alexkreidler.com</code>.</p>
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1em; margin:0.5em 0;">
+    <div class="app-group">
+      <div class="app-group-label">Project Management</div>
+      <span class="chip">OpenProject</span>
+      <span class="chip">Taiga</span>
+      <span class="chip">Plane</span>
+      <span class="chip">Huly</span>
+      <span class="chip">Kanboard</span>
     </div>
-    <div class="arrow">→</div>
-    <div class="box accent-l">
-      <div class="label">browsers</div>
-      <div class="title">Kernel cloud</div>
-      <div class="desc">Remote Chromium per session, CDP WebSocket + iframe-able <code>browser_live_view_url</code> for the live grid.</div>
-      <span class="chip">kernel.sh</span>
+    <div class="app-group">
+      <div class="app-group-label">E-Commerce</div>
+      <span class="chip">PrestaShop</span>
+      <span class="chip">Bagisto</span>
+      <span class="chip">OpenCart</span>
+      <span class="chip">Spree</span>
     </div>
-    <div class="box accent-w full">
-      <div class="label">target apps  ·  k8s cluster on alexkreidler.com</div>
-      <div class="title">26 OSS apps · Docker images · per-host ingress</div>
-      <div class="desc">
-        <span class="chip">metabase</span><span class="chip">kanboard</span><span class="chip">nocodb</span><span class="chip">listmonk</span><span class="chip">grafana</span><span class="chip">bookstack</span><span class="chip">appointments</span><span class="chip">nextcloud</span><span class="chip">prestashop</span><span class="chip">invoiceninja</span><span class="chip">twenty</span><span class="chip">plausible</span><span class="chip">chatwoot</span><span class="chip">bagisto</span><span class="chip">mattermost</span><span class="chip">mastodon</span><span class="chip">openproject</span><span class="chip">taiga</span><span class="chip">plane</span><span class="chip">huly</span><span class="chip">opencart</span>
-      </div>
-      <p class="small" style="margin-top:0.4em">Manifests: <a href="https://github.com/alexkreidler/computer-hack/tree/main/infra/k8s">infra/k8s/</a>. Each app in its own namespace; ingress at <code>*.usersim.alexkreidler.com</code>. We control deploys → reward-hacking loop can patch + redeploy.</p>
+    <div class="app-group">
+      <div class="app-group-label">CRM / Business</div>
+      <span class="chip">Twenty</span>
+      <span class="chip">ERPNext</span>
+      <span class="chip">Invoice Ninja</span>
     </div>
-    <div class="box accent-o">
-      <div class="label">grounder</div>
-      <div class="title">B200 + vLLM</div>
-      <div class="desc"><strong><a href="https://huggingface.co/Hcompany/Holo3-35B-A3B">Holo3-35B-A3B</a></strong> (H Company) — SOTA <em>open-source</em> vision→action model on <a href="https://os-world.github.io/">OSWorld</a>. Self-hosted on a VAST.ai B200, exposed via Cloudflare tunnel.</div>
-      <span class="chip">gpu.alexkreidler.com/v1</span>
+    <div class="app-group">
+      <div class="app-group-label">Social / Messaging</div>
+      <span class="chip">Mastodon</span>
+      <span class="chip">Mattermost</span>
+      <span class="chip">Discourse</span>
     </div>
-    <div class="arrow">↔</div>
-    <div class="box accent-o">
-      <div class="label">harness</div>
-      <div class="title">Surfer (planner + grounder)</div>
-      <div class="desc">Inspired by <a href="https://www.hcompany.ai/">H Company</a> + <a href="https://docs.lightcone.ai">Lightcone</a> harnesses. Claude Opus plans, Holo3 grounds. Extra browser-use tools on top.</div>
-      <span class="chip">harnesses/surfer</span>
+    <div class="app-group">
+      <div class="app-group-label">Analytics / Data</div>
+      <span class="chip">Metabase</span>
+      <span class="chip">Grafana</span>
+      <span class="chip">Plausible</span>
+      <span class="chip">NocoDB</span>
+    </div>
+    <div class="app-group">
+      <div class="app-group-label">CMS / Knowledge</div>
+      <span class="chip">Ghost</span>
+      <span class="chip">BookStack</span>
+      <span class="chip">Nextcloud</span>
+    </div>
+    <div class="app-group">
+      <div class="app-group-label">Support / Comms</div>
+      <span class="chip">Chatwoot</span>
+      <span class="chip">Zammad</span>
+      <span class="chip">Listmonk</span>
+    </div>
+    <div class="app-group">
+      <div class="app-group-label">Scheduling</div>
+      <span class="chip">Easy!Appointments</span>
     </div>
   </div>
-  <p class="small"><strong>Pluggable harness comparison:</strong> the <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/clients/base.py"><code>AgentClient</code> protocol</a> lets us swap any other CUA framework — e.g. <a href="https://github.com/anthropics/claude-code">Claude Code</a> with <a href="https://www.npmjs.com/package/agent-browser">agent-browser</a> driving by accessibility tree, or pure-vision Anthropic computer-use, or Tzafon Northstar (4B end-to-end) — by adding one client file.</p>
+  <p class="small" style="margin-top:0.5em">Each defined in a <a href="https://github.com/alexkreidler/autoux/blob/main/configs/apps/registry.jsonl">Pydantic-validated JSONL registry</a> with target URL, tasks, and success criteria. Real production-grade software with real UX complexity.</p>
   <div class="num">05</div>
 </section>
 
-<!-- 5. PERSONAS + AGENTS -->
+<!-- 06. PERSONAS AND FEEDBACK -->
 <section class="slide">
-  <h2>Personas + agents</h2>
+  <h2>Personas and feedback</h2>
   <div class="grid-2">
     <div>
-      <p><strong>105 personas</strong> across age, device, language fluency, tech literacy, prior experience, with explicit <code>quirks</code> injected into each rollout's system prompt. <strong>5 hand-curated</strong> + <strong>100 LLM-expanded</strong> with <a href="https://arxiv.org/abs/2406.20094">PersonaHub-style</a> negative-example dedup, each with a generated avatar.</p>
+      <p><strong>105 personas</strong> across age, device, language fluency, tech literacy, prior experience. <strong>5 hand-curated</strong> + <strong>100 LLM-expanded</strong> with <a href="https://arxiv.org/abs/2406.20094">PersonaHub-style</a> negative-example dedup, each with a generated avatar.</p>
       <pre><code>{"id":"elderly_first_time",
  "archetype":"68yo first-time online tax filer",
  "tech_literacy":"low","patience_steps":15,
  "quirks":["reads every word",
            "backtracks often",
            "worried about clicking wrong thing"]}</code></pre>
+      <p class="small">Explicit <code>quirks</code> injected into each rollout's system prompt drive measurably different trajectories — ~4× variance in step-count on identical tasks.</p>
     </div>
     <div>
-      <p><strong>3 pluggable CUA agents</strong> behind one <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/clients/base.py"><code>AgentClient</code> Protocol</a>:</p>
-      <div class="agents">
-        <div class="agent">
-          <div class="n">northstar</div>
-          <div class="m"><a href="https://docs.lightcone.ai">Tzafon</a> 4B end-to-end</div>
-          <div class="g">vision</div>
-        </div>
-        <div class="agent">
-          <div class="n">claude</div>
-          <div class="m"><a href="https://docs.claude.com/en/docs/build-with-claude/computer-use">Anthropic</a> computer-use</div>
-          <div class="g">vision</div>
-        </div>
-        <div class="agent" style="border-left: 3px solid var(--ok);">
-          <div class="n">surfer</div>
-          <div class="m">Claude Opus + <a href="https://huggingface.co/Hcompany/Holo3-35B-A3B">Holo3-35B</a></div>
-          <div class="g">planner + grounder</div>
-        </div>
-      </div>
-      <p class="small" style="margin-top:0.6em">Adding a 4th = one file + one line in the registry. Same trajectory format across all of them.</p>
+      <p><strong>Per-persona feedback</strong> — not aggregate noise. <code>Feedback.by_persona</code> gives the coder:</p>
+      <ul>
+        <li>success rate &amp; avg steps per persona</li>
+        <li><strong>distinctive actions</strong> — action types ≥ 2× cohort median</li>
+        <li><strong>distinctive quotes</strong> — reasoning lines unique to this persona, substring-fingerprinted against all others</li>
+      </ul>
+      <p class="small"><em>"elderly_first_time abandons at step 4 with 'I don't understand why this isn't working'"</em> — that's what the coder needs to write the right patch, not "median user clicks 5×".</p>
+      <p class="small">Drops straight into a PR description, design review, or coding-agent prompt. Persona voice replaces aggregate statistics.</p>
     </div>
   </div>
   <div class="num">06</div>
 </section>
 
-<!-- 6. REWARD HACKING -->
+<!-- 07. CODE CHANGES AND REDEPLOYS -->
+<section class="slide">
+  <h2>Code changes and redeploys</h2>
+  <p>The coder agent reads <code>feedback.json</code>, patches the target app's source, and redeploys — fully automated, isolated from production.</p>
+  <div class="grid-2">
+    <div>
+      <ul>
+        <li><strong>Clone the repo</strong> — each target app's source is cloned locally; the coding agent (Claude CLI) reads friction clusters + suggested fixes and proposes patches directly against the codebase.</li>
+        <li><strong>Depot for fast rebuilds</strong> — Docker images are built via <a href="https://depot.dev/">Depot</a> for fast, cached remote builds. No waiting on local Docker.</li>
+        <li><strong>Redeploy into live K8s</strong> — patched image is pushed and rolled out to a <strong>separate <code>dev-*</code> subdomain</strong> on our cluster, never touching the baseline deployment.</li>
+      </ul>
+    </div>
+    <div>
+      <pre><code># coder/loop.py — one iteration
+feedback = load("feedback.json")
+patch = claude_cli.patch(feedback)
+
+if patch.success:
+    git commit -m "iter_N: auto-ux patch"
+    depot build → push image
+    kubectl rollout → dev-app.usersim.alexkreidler.com
+
+# next MAP iteration targets the new deploy</code></pre>
+      <p class="small">The baseline stays untouched for A/B comparison. Iteration N+1 MAP runs target the patched deploy, closing the loop.</p>
+    </div>
+  </div>
+  <div class="num">07</div>
+</section>
+
+<!-- 08. REWARD HACKING -->
 <section class="slide" style="padding: 3vh 4vw;">
   <h2>Reward Hacking</h2>
   <p>Coding agents trained against observable metrics will <a href="https://arxiv.org/abs/2209.13085">game them</a>. Our defense: a held-out judge the coder cannot see.</p>
@@ -529,147 +504,81 @@ flowchart LR
   class ALARM danger
   </div>
   <p style="margin-top:0.3em">A <strong>falsifiable, auditable</strong> measure of reward hacking in the loop.</p>
-  <p class="small"><a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/reduce/grader.py">grader.py</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/reduce/patterns.py">patterns.py</a> · <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/reduce/aggregator.py">aggregator.py</a></p>
-  <div class="num">07</div>
-</section>
-
-<!-- 7. PER-PERSONA -->
-<section class="slide">
-  <h2>Reduce — per-persona segmentation</h2>
-  <div class="grid-1-2">
-    <div>
-      <p><code>Feedback.by_persona</code> gives the coder <strong>persona-aware signal</strong>, not aggregate noise.</p>
-      <p>For each persona:</p>
-      <ul>
-        <li>success rate &amp; avg steps</li>
-        <li><strong>distinctive actions</strong> — action types ≥ 2× cohort median</li>
-        <li><strong>distinctive quotes</strong> — reasoning lines unique to this persona</li>
-      </ul>
-      <p class="small">"median user clicks 5×" is useless. <em>"elderly_first_time abandons at step 4 with 'I don't understand why this isn't working'"</em> is what the coder needs to write the right patch.</p>
-    </div>
-    <div class="img-fit"><img src="../demo/persona_divergence.png" alt="persona divergence chart"></div>
-  </div>
+  <p class="small"><a href="https://github.com/alexkreidler/autoux/blob/main/src/usersim/reduce/grader.py">grader.py</a> · <a href="https://github.com/alexkreidler/autoux/blob/main/src/usersim/reduce/patterns.py">patterns.py</a> · <a href="https://github.com/alexkreidler/autoux/blob/main/src/usersim/reduce/aggregator.py">aggregator.py</a></p>
   <div class="num">08</div>
 </section>
 
-<!-- 7b. DISTINCTIVE QUOTES -->
+<!-- 09. INFRASTRUCTURE -->
 <section class="slide">
-  <h2>The signal in the persona's own voice</h2>
-  <div class="grid-1-2">
-    <div>
-      <p>Stage 1 doesn't just tag failures — it surfaces <strong>what each persona actually said</strong> that no other persona said.</p>
-      <p>Per-persona quote extraction:</p>
-      <ul>
-        <li>Take all reasoning lines from this persona's trajectories</li>
-        <li>Substring-fingerprint each against every other persona's reasoning</li>
-        <li>Keep the longest unique quote per trajectory; rank by length</li>
-      </ul>
-      <p class="small">Drops straight into a PR description, design review, or a coding-agent prompt. Persona voice replaces aggregate statistics.</p>
+  <h2>Infrastructure</h2>
+  <p class="lead">Self-hosted end-to-end. <strong>K8s cluster — 26 OSS apps deployed</strong> · <strong>B200 on VAST.ai</strong> serving SOTA open-source grounder · <strong>Cloudflare tunnel</strong> for the public endpoint.</p>
+  <div class="topo">
+    <div class="box accent-l">
+      <div class="label">orchestrator</div>
+      <div class="title">UserSim engine</div>
+      <div class="desc">asyncio fanout, semaphore-bounded; one Kernel session per (persona × task × app). Streaming JSONL + replay mp4 per cell.</div>
+      <span class="chip">src/usersim</span>
     </div>
-    <div class="img-fit"><img src="../demo/persona_quotes.png" alt="distinctive quotes per persona"></div>
+    <div class="arrow">→</div>
+    <div class="box accent-l">
+      <div class="label">browsers</div>
+      <div class="title">Kernel cloud</div>
+      <div class="desc">Remote Chromium per session, CDP WebSocket + iframe-able <code>browser_live_view_url</code> for the live grid.</div>
+      <span class="chip">kernel.sh</span>
+    </div>
+    <div class="box accent-o">
+      <div class="label">grounder</div>
+      <div class="title">B200 + vLLM</div>
+      <div class="desc"><strong><a href="https://huggingface.co/Hcompany/Holo3-35B-A3B">Holo3-35B-A3B</a></strong> (H Company) — SOTA <em>open-source</em> vision→action model on <a href="https://os-world.github.io/">OSWorld</a>. Self-hosted on a VAST.ai B200, exposed via Cloudflare tunnel.</div>
+      <span class="chip">gpu.alexkreidler.com/v1</span>
+    </div>
+    <div class="arrow">↔</div>
+    <div class="box accent-o">
+      <div class="label">harness</div>
+      <div class="title">Surfer (planner + grounder)</div>
+      <div class="desc">Inspired by <a href="https://www.hcompany.ai/">H Company</a> + <a href="https://docs.lightcone.ai">Lightcone</a> harnesses. Claude Opus plans, Holo3 grounds. Extra browser-use tools on top.</div>
+      <span class="chip">harnesses/surfer</span>
+    </div>
+    <div class="box accent-w full">
+      <div class="label">build + deploy</div>
+      <div class="title">Depot + K8s rollout</div>
+      <div class="desc">Fast cached Docker builds via <a href="https://depot.dev/">Depot</a>. Patched images deploy to <code>dev-*</code> subdomains on the cluster. Baseline stays untouched for A/B.</div>
+      <span class="chip">coder/deploy.py</span>
+    </div>
   </div>
+  <p class="small"><strong>Pluggable harness comparison:</strong> the <a href="https://github.com/alexkreidler/autoux/blob/main/src/usersim/clients/base.py"><code>AgentClient</code> protocol</a> lets us swap any CUA framework — Anthropic computer-use, Tzafon Northstar (4B end-to-end), or our Surfer planner+grounder — by adding one client file.</p>
   <div class="num">09</div>
 </section>
 
-<!-- 8. IMPLEMENTATION -->
+<!-- 10. NOVEL -->
 <section class="slide">
-  <h2>Implementation grounding</h2>
-  <div class="grid-2">
-    <div>
-      <p><strong>Engine</strong> — 23 modules, ~6k LOC (engine only, excluding harness), pyright-clean on our code, Pydantic-validated everywhere.</p>
-      <ul>
-        <li><a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/schemas.py"><code>schemas.py</code></a> — Persona, Task, App, Action, Step, Trajectory, Feedback</li>
-        <li><a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/map/worker.py"><code>map/worker.py</code></a> — async per-cell loop with stuck-detection, retries, replay recording</li>
-        <li><a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/io.py"><code>io.py</code></a> — streaming JSONL, fsync per step, crash-safe</li>
-        <li><a href="https://github.com/alexkreidler/computer-hack/tree/main/src/usersim/harnesses/surfer"><code>harnesses/surfer/</code></a> — Surfer planner+grounder, vendored</li>
-      </ul>
-    </div>
-    <div>
-      <p><strong>Apps</strong> — <a href="https://github.com/alexkreidler/computer-hack/blob/main/configs/apps/registry.jsonl">JSONL app registry</a> defines target URLs + tasks + success criteria; runtime <a href="https://github.com/alexkreidler/computer-hack/tree/main/infra/k8s">k8s manifests</a> deploy the apps themselves.</p>
-      <p class="small">Metabase · Kanboard · Grafana · BookStack · Mastodon · Mattermost · OpenProject · Taiga · Plane · NocoDB · Listmonk · Nextcloud · PrestaShop · Bagisto · Twenty CRM · Chatwoot · Invoice Ninja · Plausible · Easy!Appointments · Huly · OpenCart …</p>
-      <p>Both Pydantic-validated; teammate pushes registry adds, the engine consumes them as first-class data.</p>
-      <p><strong>Live dashboard</strong> — Next.js + FastAPI, iframes Kernel's <code>browser_live_view_url</code> for real-time grid view (<a href="https://github.com/alexkreidler/computer-hack/tree/main/apps/dashboard"><code>apps/dashboard/</code></a>).</p>
-    </div>
-  </div>
+  <h2>What's novel</h2>
+  <ol>
+    <li><strong>First CUA/BUA-based UserSim framework.</strong> Prior work is text-only chat eval (<a href="https://github.com/confident-ai/deepeval">DeepEval</a>, <a href="https://langwatch.ai/">LangWatch</a>, <a href="https://github.com/camel-ai/oasis">OASIS</a>). We extend the user-simulator pattern from text → real browser, real DOM, real visual UI.</li>
+    <li><strong>Per-persona reduction.</strong> <code>Feedback.by_persona</code> surfaces signal traditional clustering hides; coder gets <em>persona-specific</em> fixes, not median-user platitudes.</li>
+    <li><strong>Held-out reward firewall.</strong> Two-stage reward gives a falsifiable measure of <a href="https://arxiv.org/abs/2209.13085">reward hacking</a> in CUA-driven product loops — a domain we don't believe this exists for elsewhere.</li>
+    <li><strong>Provider-agnostic agent comparison.</strong> Same trajectory format across <code>northstar</code>, <code>claude</code>, <code>surfer</code>; agent comparison is one CLI flag.</li>
+    <li><strong>End-to-end reproducible.</strong> Apps + personas as Pydantic registries, JSONL trajectories, ffmpeg replay grids, deterministic Stage 1 — every claim re-runnable from <code>git clone</code>.</li>
+  </ol>
   <div class="num">10</div>
 </section>
 
-<!-- 10b. DASHBOARD UI -->
+<!-- 11. FUTURE WORK -->
 <section class="slide">
-  <h2>Live dashboard</h2>
-  <p class="lead">Watch every persona's session in real time — Kernel's <code>browser_live_view_url</code> iframed in a <strong>casting-reel grid</strong>, plus a historical past-runs browser for any iteration.</p>
-  <div class="ui-gallery">
-    <div class="frame">
-      <div class="cap">empty state · 100 personas loaded, waiting for runs</div>
-      <img src="../demo/dashboard-empty.png" alt="dashboard with 100 persona avatars">
-    </div>
-    <div class="frame">
-      <div class="cap">past runs browser · MP4 + Feedback per iteration</div>
-      <img src="../demo/dashboard-past-runs.png" alt="historical run dropdown">
-    </div>
-  </div>
-  <p class="small" style="margin-top:0.5em">Next.js + FastAPI · click-to-focus, drag-to-marquee, full transcript drawer per cell · <a href="https://github.com/alexkreidler/computer-hack/tree/main/apps/dashboard"><code>apps/dashboard/</code></a></p>
+  <h2>Future work</h2>
+  <ul>
+    <li><strong>Benchmark between Tzafon / Holo / Claude.</strong> Same trajectory format across all three agents — run identical persona × task grids on each, compare success rates, step counts, friction patterns, and cost per trajectory. The <code>AgentClient</code> protocol makes this a one-flag swap.</li>
+    <li><strong>Expand to longer-horizon tasks.</strong> Current tasks are single-session (login, create, browse). Real UX friction often spans multi-session workflows — onboarding funnels, multi-day retention loops, complex admin setups. Extend the worker to resume sessions and track state across runs.</li>
+    <li><strong>Improve speed.</strong> End-to-end iteration time is currently bottlenecked by CUA latency (~5-10s per turn) and sequential grading. Parallelize Stage 1 grading, pipeline MAP and REDUCE overlap, and explore smaller/faster grounder models to cut per-iteration wall time.</li>
+  </ul>
   <div class="num">11</div>
 </section>
 
-<!-- 9. NOVEL -->
-<section class="slide">
-  <h2>What's novel</h2>
-  <div class="novel">
-    <div class="card full">
-      <div class="h">First CUA/BUA-based UserSim framework</div>
-      <div class="b">Prior work is text-only chat eval (<a href="https://github.com/confident-ai/deepeval">DeepEval</a>, <a href="https://langwatch.ai/">LangWatch</a>, <a href="https://github.com/camel-ai/oasis">OASIS</a>). We extend the user-simulator pattern: text → real browser, real DOM, real visual UI.</div>
-    </div>
-    <div class="card">
-      <div class="h">Per-persona reduction</div>
-      <div class="b"><code>Feedback.by_persona</code> surfaces signal traditional clustering hides. Coder gets <em>persona-specific</em> fixes, not median-user platitudes.</div>
-    </div>
-    <div class="card">
-      <div class="h">Held-out reward firewall</div>
-      <div class="b">Two-stage reward → falsifiable measure of <a href="https://arxiv.org/abs/2209.13085">reward hacking</a> in CUA-driven product loops. Doesn't exist for this domain elsewhere.</div>
-    </div>
-    <div class="card">
-      <div class="h">Provider-agnostic agent comparison</div>
-      <div class="b">Same trajectory format across <code>northstar</code>, <code>claude</code>, <code>surfer</code>. Agent A/B is one CLI flag.</div>
-    </div>
-    <div class="card">
-      <div class="h">End-to-end reproducible</div>
-      <div class="b">Apps + personas as Pydantic registries, JSONL trajectories, ffmpeg replay grids, deterministic Stage 1. Every claim re-runs from <code>git clone</code>.</div>
-    </div>
-  </div>
-  <div class="num">12</div>
-</section>
-
-<!-- 10. FUTURE -->
-<section class="slide">
-  <h2>Future work + open questions</h2>
-  <div class="cols-2">
-    <div class="col accent">
-      <h3>Near-term</h3>
-      <ul>
-        <li>Wire <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/usersim/reduce/grader.py"><code>grade_stage2_heldout</code></a> at full iteration cadence (currently stubbed).</li>
-        <li>Close the redeploy loop in <a href="https://github.com/alexkreidler/computer-hack/blob/main/src/coder/loop.py"><code>coder/loop.py</code></a>.</li>
-        <li>Open the 26-app registry + persona pool as a public benchmark.</li>
-      </ul>
-    </div>
-    <div class="col warn">
-      <h3>Research questions</h3>
-      <ul>
-        <li>Does <code>delta_gameable_vs_heldout</code> reliably catch reward hacking <em>before</em> a human notices? Need N≥20 iterations.</li>
-        <li>How sensitive is friction signal to persona pool size? Is there a knee?</li>
-        <li>Can a held-out persona pool detect overfitting to the training pool?</li>
-        <li>Are pattern detectors generalizable across domains?</li>
-      </ul>
-    </div>
-  </div>
-  <div class="num">13</div>
-</section>
-
-<!-- 11. THANKS -->
+<!-- 12. THANKS -->
 <section class="slide title">
   <h1 style="font-size:4rem">Thanks</h1>
   <div class="sub" style="margin-top:0.8em">Alex Kreidler · David Bai</div>
-  <div class="repo"><a href="https://github.com/alexkreidler/computer-hack">github.com/alexkreidler/computer-hack</a></div>
+  <div class="repo"><a href="https://github.com/alexkreidler/autoux">github.com/alexkreidler/autoux</a></div>
   <div class="num">—</div>
 </section>
 
