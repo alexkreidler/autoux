@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl, fetchJson } from "@/lib/api";
 import { useSessions } from "./useSessions";
-import MetricBar from "./MetricBar";
 import Grid from "./Grid";
 import RunModal from "./RunModal";
 import FocusedCell from "./FocusedCell";
@@ -220,8 +219,9 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* metric bar — only show when there are active live sessions */}
-      {!isHistoryMode && liveSessions.length > 0 && <MetricBar />}
+      {/* metric bar removed — was showing stale numbers from prior runs.
+          Per-run feedback now lives in ResultsView (persona-segmented),
+          opened from the past-runs browser. */}
 
       {/* action bar */}
       <div className="flex justify-end items-center gap-3 mb-[14px]">
