@@ -1,0 +1,288 @@
+# Traefik IngressRoutes for all UserSim apps
+# All public, no auth, wildcard *.usersim.alexkreidler.com
+# Using standard Ingress resources (K3s Traefik supports these)
+
+# === Metabase ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: metabase
+  namespace: metabase
+spec:
+  rules:
+  - host: metabase.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: metabase
+            port:
+              number: 3000
+---
+# === Kanboard ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kanboard
+  namespace: kanboard
+spec:
+  rules:
+  - host: kanboard.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kanboard
+            port:
+              number: 80
+---
+# === NocoDB ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nocodb
+  namespace: nocodb
+spec:
+  rules:
+  - host: nocodb.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nocodb
+            port:
+              number: 8080
+---
+# === Ghost ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghost
+  namespace: ghost
+spec:
+  rules:
+  - host: ghost.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ghost
+            port:
+              number: 2368
+---
+# === Listmonk ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: listmonk
+  namespace: listmonk
+spec:
+  rules:
+  - host: listmonk.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: listmonk
+            port:
+              number: 9000
+---
+# === Grafana ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  rules:
+  - host: grafana.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+---
+# === BookStack ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookstack
+  namespace: bookstack
+spec:
+  rules:
+  - host: bookstack.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bookstack
+            port:
+              number: 80
+---
+# === Easy!Appointments ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: easyappt
+  namespace: easyappt
+spec:
+  rules:
+  - host: appointments.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: easyappt
+            port:
+              number: 80
+---
+# === Nextcloud ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  rules:
+  - host: nextcloud.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nextcloud
+            port:
+              number: 80
+---
+# === PrestaShop ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prestashop
+  namespace: prestashop
+spec:
+  rules:
+  - host: prestashop.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prestashop
+            port:
+              number: 80
+---
+# === Invoice Ninja ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: invoiceninja
+  namespace: invoiceninja
+spec:
+  rules:
+  - host: invoiceninja.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: invoiceninja
+            port:
+              number: 9000
+---
+# === Twenty CRM ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: twenty
+  namespace: twenty
+spec:
+  rules:
+  - host: twenty.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: twenty
+            port:
+              number: 3000
+---
+# === Plausible ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plausible
+  namespace: plausible
+spec:
+  rules:
+  - host: plausible.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: plausible
+            port:
+              number: 8000
+---
+# === Chatwoot ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chatwoot
+  namespace: chatwoot
+spec:
+  rules:
+  - host: chatwoot.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: chatwoot
+            port:
+              number: 3000
+---
+# === Bagisto ===
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bagisto
+  namespace: bagisto
+spec:
+  rules:
+  - host: bagisto.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bagisto
+            port:
+              number: 80

@@ -1,0 +1,705 @@
+# === OPENPROJECT ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openproject
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openproject-db
+  namespace: openproject
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openproject-db
+  template:
+    metadata:
+      labels:
+        app: openproject-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: openproject
+        - name: POSTGRES_USER
+          value: openproject
+        - name: POSTGRES_PASSWORD
+          value: openproject
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openproject-db
+  namespace: openproject
+spec:
+  selector:
+    app: openproject-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openproject-cache
+  namespace: openproject
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openproject-cache
+  template:
+    metadata:
+      labels:
+        app: openproject-cache
+    spec:
+      containers:
+      - name: memcached
+        image: memcached:alpine
+        ports:
+        - containerPort: 11211
+        resources:
+          requests: { memory: "32Mi", cpu: "10m" }
+          limits: { memory: "128Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openproject-cache
+  namespace: openproject
+spec:
+  selector:
+    app: openproject-cache
+  ports:
+  - port: 11211
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openproject
+  namespace: openproject
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openproject
+  template:
+    metadata:
+      labels:
+        app: openproject
+    spec:
+      containers:
+      - name: openproject
+        image: openproject/openproject:15
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OPENPROJECT_HOST__NAME
+          value: "openproject.usersim.alexkreidler.com"
+        - name: OPENPROJECT_HTTPS
+          value: "false"
+        - name: DATABASE_URL
+          value: "postgres://openproject:openproject@openproject-db:5432/openproject"
+        - name: RAILS_CACHE_STORE
+          value: "memcache"
+        - name: OPENPROJECT_CACHE__MEMCACHE__SERVER
+          value: "openproject-cache:11211"
+        - name: OPENPROJECT_SEED__ADMIN__USER__PASSWORD__RESET
+          value: "false"
+        - name: OPENPROJECT_SEED__ADMIN__USER__PASSWORD
+          value: "admin123admin123"
+        resources:
+          requests: { memory: "1Gi", cpu: "200m" }
+          limits: { memory: "2Gi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openproject
+  namespace: openproject
+spec:
+  selector:
+    app: openproject
+  ports:
+  - port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openproject
+  namespace: openproject
+spec:
+  rules:
+  - host: openproject.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: openproject
+            port:
+              number: 8080
+---
+# === TAIGA ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: taiga
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taiga-db
+  namespace: taiga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taiga-db
+  template:
+    metadata:
+      labels:
+        app: taiga-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: taiga
+        - name: POSTGRES_USER
+          value: taiga
+        - name: POSTGRES_PASSWORD
+          value: taiga
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: taiga-db
+  namespace: taiga
+spec:
+  selector:
+    app: taiga-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taiga-rabbitmq
+  namespace: taiga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taiga-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: taiga-rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-alpine
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          value: taiga
+        - name: RABBITMQ_DEFAULT_PASS
+          value: taiga
+        - name: RABBITMQ_DEFAULT_VHOST
+          value: taiga
+        ports:
+        - containerPort: 5672
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: taiga-rabbitmq
+  namespace: taiga
+spec:
+  selector:
+    app: taiga-rabbitmq
+  ports:
+  - port: 5672
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taiga-back
+  namespace: taiga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taiga-back
+  template:
+    metadata:
+      labels:
+        app: taiga-back
+    spec:
+      containers:
+      - name: back
+        image: taigaio/taiga-back:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: TAIGA_SECRET_KEY
+          value: "usersim-taiga-secret-key-change-me-12345"
+        - name: POSTGRES_DB
+          value: taiga
+        - name: POSTGRES_USER
+          value: taiga
+        - name: POSTGRES_PASSWORD
+          value: taiga
+        - name: POSTGRES_HOST
+          value: taiga-db
+        - name: TAIGA_SITES_DOMAIN
+          value: "taiga.usersim.alexkreidler.com"
+        - name: TAIGA_SITES_SCHEME
+          value: "http"
+        - name: RABBITMQ_USER
+          value: taiga
+        - name: RABBITMQ_PASS
+          value: taiga
+        - name: EVENTS_PUSH_BACKEND_URL
+          value: "amqp://taiga:taiga@taiga-rabbitmq:5672/taiga"
+        - name: CELERY_BROKER_URL
+          value: "amqp://taiga:taiga@taiga-rabbitmq:5672/taiga"
+        resources:
+          requests: { memory: "256Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: taiga-back
+  namespace: taiga
+spec:
+  selector:
+    app: taiga-back
+  ports:
+  - port: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taiga-front
+  namespace: taiga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taiga-front
+  template:
+    metadata:
+      labels:
+        app: taiga-front
+    spec:
+      containers:
+      - name: front
+        image: taigaio/taiga-front:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: TAIGA_URL
+          value: "http://taiga.usersim.alexkreidler.com"
+        - name: TAIGA_SUBPATH
+          value: ""
+        resources:
+          requests: { memory: "32Mi", cpu: "10m" }
+          limits: { memory: "128Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: taiga-front
+  namespace: taiga
+spec:
+  selector:
+    app: taiga-front
+  ports:
+  - port: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taiga-gateway
+  namespace: taiga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taiga-gateway
+  template:
+    metadata:
+      labels:
+        app: taiga-gateway
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/conf.d
+        resources:
+          requests: { memory: "16Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+      volumes:
+      - name: conf
+        configMap:
+          name: taiga-nginx
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taiga-nginx
+  namespace: taiga
+data:
+  default.conf: |
+    server {
+        listen 80;
+        location /api/ { proxy_pass http://taiga-back:8000/api/; proxy_set_header Host $host; }
+        location /admin/ { proxy_pass http://taiga-back:8000/admin/; proxy_set_header Host $host; }
+        location /media/ { proxy_pass http://taiga-back:8000/media/; }
+        location / { proxy_pass http://taiga-front:80/; }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: taiga-gateway
+  namespace: taiga
+spec:
+  selector:
+    app: taiga-gateway
+  ports:
+  - port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: taiga
+  namespace: taiga
+spec:
+  rules:
+  - host: taiga.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: taiga-gateway
+            port:
+              number: 80
+---
+# === PLANE ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plane
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-db
+  namespace: plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-db
+  template:
+    metadata:
+      labels:
+        app: plane-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: plane
+        - name: POSTGRES_USER
+          value: plane
+        - name: POSTGRES_PASSWORD
+          value: plane
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-db
+  namespace: plane
+spec:
+  selector:
+    app: plane-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-redis
+  namespace: plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-redis
+  template:
+    metadata:
+      labels:
+        app: plane-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests: { memory: "8Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-redis
+  namespace: plane
+spec:
+  selector:
+    app: plane-redis
+  ports:
+  - port: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-minio
+  namespace: plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-minio
+  template:
+    metadata:
+      labels:
+        app: plane-minio
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:latest
+        args: ["server", "/data", "--console-address", ":9001"]
+        env:
+        - name: MINIO_ROOT_USER
+          value: "plane"
+        - name: MINIO_ROOT_PASSWORD
+          value: "planeminio"
+        ports:
+        - containerPort: 9000
+        - containerPort: 9001
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-minio
+  namespace: plane
+spec:
+  selector:
+    app: plane-minio
+  ports:
+  - port: 9000
+    name: api
+  - port: 9001
+    name: console
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-api
+  namespace: plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-api
+  template:
+    metadata:
+      labels:
+        app: plane-api
+    spec:
+      containers:
+      - name: api
+        image: makeplane/plane-backend:latest
+        command: ["./bin/docker-entrypoint-api.sh"]
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: "postgres://plane:plane@plane-db:5432/plane"
+        - name: REDIS_URL
+          value: "redis://plane-redis:6379"
+        - name: SECRET_KEY
+          value: "usersim-plane-secret-key-change-me-1234"
+        - name: AWS_S3_ENDPOINT_URL
+          value: "http://plane-minio:9000"
+        - name: AWS_ACCESS_KEY_ID
+          value: "plane"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "planeminio"
+        - name: AWS_S3_BUCKET_NAME
+          value: "uploads"
+        - name: WEB_URL
+          value: "http://plane.usersim.alexkreidler.com"
+        resources:
+          requests: { memory: "256Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-api
+  namespace: plane
+spec:
+  selector:
+    app: plane-api
+  ports:
+  - port: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-web
+  namespace: plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-web
+  template:
+    metadata:
+      labels:
+        app: plane-web
+    spec:
+      containers:
+      - name: web
+        image: makeplane/plane-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_BASE_URL
+          value: "http://plane-api:8000"
+        resources:
+          requests: { memory: "128Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-web
+  namespace: plane
+spec:
+  selector:
+    app: plane-web
+  ports:
+  - port: 3000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plane-nginx
+  namespace: plane
+data:
+  default.conf: |
+    server {
+        listen 80;
+        location /api/ { proxy_pass http://plane-api:8000/api/; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; }
+        location / { proxy_pass http://plane-web:3000/; proxy_set_header Host $host; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-proxy
+  namespace: plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-proxy
+  template:
+    metadata:
+      labels:
+        app: plane-proxy
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/conf.d
+        resources:
+          requests: { memory: "16Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+      volumes:
+      - name: conf
+        configMap:
+          name: plane-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-proxy
+  namespace: plane
+spec:
+  selector:
+    app: plane-proxy
+  ports:
+  - port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plane
+  namespace: plane
+spec:
+  rules:
+  - host: plane.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: plane-proxy
+            port:
+              number: 80

@@ -1,0 +1,834 @@
+# === PRESTASHOP (E-commerce) - Full demo shop with PS_DEMO_MODE ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prestashop
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prestashop-db
+  namespace: prestashop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prestashop-db
+  template:
+    metadata:
+      labels:
+        app: prestashop-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: prestashop
+        - name: MYSQL_DATABASE
+          value: prestashop
+        ports:
+        - containerPort: 3306
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prestashop-db
+  namespace: prestashop
+spec:
+  selector:
+    app: prestashop-db
+  ports:
+  - port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prestashop
+  namespace: prestashop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prestashop
+  template:
+    metadata:
+      labels:
+        app: prestashop
+    spec:
+      containers:
+      - name: prestashop
+        image: prestashop/prestashop:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: PS_INSTALL_AUTO
+          value: "1"
+        - name: PS_DEMO_MODE
+          value: "1"
+        - name: PS_DOMAIN
+          value: "98.92.239.172:30110"
+        - name: DB_SERVER
+          value: "prestashop-db"
+        - name: DB_NAME
+          value: "prestashop"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWD
+          value: "prestashop"
+        - name: ADMIN_MAIL
+          value: "demo@prestashop.com"
+        - name: ADMIN_PASSWD
+          value: "prestashop_demo"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prestashop
+  namespace: prestashop
+spec:
+  type: NodePort
+  selector:
+    app: prestashop
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30110
+---
+# === OPENCART (E-commerce) - Full storefront ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opencart
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencart-db
+  namespace: opencart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opencart-db
+  template:
+    metadata:
+      labels:
+        app: opencart-db
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:10
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: opencart
+        - name: MYSQL_DATABASE
+          value: opencart
+        - name: MYSQL_USER
+          value: opencart
+        - name: MYSQL_PASSWORD
+          value: opencart
+        ports:
+        - containerPort: 3306
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opencart-db
+  namespace: opencart
+spec:
+  selector:
+    app: opencart-db
+  ports:
+  - port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencart
+  namespace: opencart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opencart
+  template:
+    metadata:
+      labels:
+        app: opencart
+    spec:
+      containers:
+      - name: opencart
+        image: docker.io/bitnami/opencart:4
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OPENCART_HOST
+          value: "98.92.239.172:30111"
+        - name: OPENCART_DATABASE_HOST
+          value: "opencart-db"
+        - name: OPENCART_DATABASE_NAME
+          value: "opencart"
+        - name: OPENCART_DATABASE_USER
+          value: "opencart"
+        - name: OPENCART_DATABASE_PASSWORD
+          value: "opencart"
+        - name: OPENCART_USERNAME
+          value: "admin"
+        - name: OPENCART_PASSWORD
+          value: "admin123"
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "no"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opencart
+  namespace: opencart
+spec:
+  type: NodePort
+  selector:
+    app: opencart
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30111
+---
+# === INVOICE NINJA (Invoicing) ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: invoiceninja
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoiceninja-db
+  namespace: invoiceninja
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: invoiceninja-db
+  template:
+    metadata:
+      labels:
+        app: invoiceninja-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: ninja
+        - name: MYSQL_DATABASE
+          value: ninja
+        ports:
+        - containerPort: 3306
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: invoiceninja-db
+  namespace: invoiceninja
+spec:
+  selector:
+    app: invoiceninja-db
+  ports:
+  - port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoiceninja
+  namespace: invoiceninja
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: invoiceninja
+  template:
+    metadata:
+      labels:
+        app: invoiceninja
+    spec:
+      containers:
+      - name: invoiceninja
+        image: invoiceninja/invoiceninja:latest
+        ports:
+        - containerPort: 9000
+        env:
+        - name: APP_URL
+          value: "http://98.92.239.172:30112"
+        - name: APP_KEY
+          value: "base64:xM3yIKmFgcDobSnNyef2kpyDay6JgOCDfIpxPEqx5mA="
+        - name: DB_HOST
+          value: "invoiceninja-db"
+        - name: DB_DATABASE
+          value: "ninja"
+        - name: DB_USERNAME
+          value: "root"
+        - name: DB_PASSWORD
+          value: "ninja"
+        - name: IN_USER_EMAIL
+          value: "admin@example.com"
+        - name: IN_PASSWORD
+          value: "changeme!"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: invoiceninja
+  namespace: invoiceninja
+spec:
+  type: NodePort
+  selector:
+    app: invoiceninja
+  ports:
+  - port: 9000
+    targetPort: 9000
+    nodePort: 30112
+---
+# === TWENTY CRM ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: twenty
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twenty-db
+  namespace: twenty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twenty-db
+  template:
+    metadata:
+      labels:
+        app: twenty-db
+    spec:
+      containers:
+      - name: postgres
+        image: twentycrm/twenty-postgres:latest
+        env:
+        - name: POSTGRES_USER
+          value: "twenty"
+        - name: POSTGRES_PASSWORD
+          value: "twenty"
+        - name: POSTGRES_DB
+          value: "default"
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: twenty-db
+  namespace: twenty
+spec:
+  selector:
+    app: twenty-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twenty-redis
+  namespace: twenty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twenty-redis
+  template:
+    metadata:
+      labels:
+        app: twenty-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: twenty-redis
+  namespace: twenty
+spec:
+  selector:
+    app: twenty-redis
+  ports:
+  - port: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twenty
+  namespace: twenty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twenty
+  template:
+    metadata:
+      labels:
+        app: twenty
+    spec:
+      containers:
+      - name: twenty
+        image: twentycrm/twenty:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: SERVER_URL
+          value: "http://98.92.239.172:30113"
+        - name: FRONT_BASE_URL
+          value: "http://98.92.239.172:30113"
+        - name: PG_DATABASE_URL
+          value: "postgres://twenty:twenty@twenty-db:5432/default"
+        - name: REDIS_URL
+          value: "redis://twenty-redis:6379"
+        - name: APP_SECRET
+          value: "my-secret-key-change-me-later-123456"
+        - name: ACCESS_TOKEN_SECRET
+          value: "access-token-secret-change-me-123456"
+        - name: LOGIN_TOKEN_SECRET
+          value: "login-token-secret-change-me-1234567"
+        - name: REFRESH_TOKEN_SECRET
+          value: "refresh-token-secret-change-me-12345"
+        - name: FILE_TOKEN_SECRET
+          value: "file-token-secret-change-me-12345678"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: twenty
+  namespace: twenty
+spec:
+  type: NodePort
+  selector:
+    app: twenty
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30113
+---
+# === PLAUSIBLE ANALYTICS ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plausible
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plausible-db
+  namespace: plausible
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plausible-db
+  template:
+    metadata:
+      labels:
+        app: plausible-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        env:
+        - name: POSTGRES_DB
+          value: plausible
+        - name: POSTGRES_USER
+          value: plausible
+        - name: POSTGRES_PASSWORD
+          value: plausible
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plausible-db
+  namespace: plausible
+spec:
+  selector:
+    app: plausible-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plausible-clickhouse
+  namespace: plausible
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plausible-clickhouse
+  template:
+    metadata:
+      labels:
+        app: plausible-clickhouse
+    spec:
+      containers:
+      - name: clickhouse
+        image: clickhouse/clickhouse-server:24-alpine
+        ports:
+        - containerPort: 8123
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plausible-clickhouse
+  namespace: plausible
+spec:
+  selector:
+    app: plausible-clickhouse
+  ports:
+  - port: 8123
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plausible
+  namespace: plausible
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plausible
+  template:
+    metadata:
+      labels:
+        app: plausible
+    spec:
+      containers:
+      - name: plausible
+        image: ghcr.io/plausible/community-edition:v2.1
+        ports:
+        - containerPort: 8000
+        env:
+        - name: BASE_URL
+          value: "http://98.92.239.172:30114"
+        - name: SECRET_KEY_BASE
+          value: "GLVzDZW04FzuS1gMcmBRVhwgd4Aq9GmuQbS3F963VlYyigYQM0eYru1bLgqBsEH"
+        - name: TOTP_VAULT_KEY
+          value: "dsxvbn3jxDd16az2QpsX5B8O+llXbwjQjBmEuHGMfbc="
+        - name: DATABASE_URL
+          value: "postgres://plausible:plausible@plausible-db:5432/plausible"
+        - name: CLICKHOUSE_DATABASE_URL
+          value: "http://plausible-clickhouse:8123/plausible"
+        - name: DISABLE_REGISTRATION
+          value: "false"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plausible
+  namespace: plausible
+spec:
+  type: NodePort
+  selector:
+    app: plausible
+  ports:
+  - port: 8000
+    targetPort: 8000
+    nodePort: 30114
+---
+# === CHATWOOT (Customer Support) ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chatwoot
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatwoot-db
+  namespace: chatwoot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatwoot-db
+  template:
+    metadata:
+      labels:
+        app: chatwoot-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: chatwoot
+        - name: POSTGRES_USER
+          value: chatwoot
+        - name: POSTGRES_PASSWORD
+          value: chatwoot
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatwoot-db
+  namespace: chatwoot
+spec:
+  selector:
+    app: chatwoot-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatwoot-redis
+  namespace: chatwoot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatwoot-redis
+  template:
+    metadata:
+      labels:
+        app: chatwoot-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatwoot-redis
+  namespace: chatwoot
+spec:
+  selector:
+    app: chatwoot-redis
+  ports:
+  - port: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatwoot
+  namespace: chatwoot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatwoot
+  template:
+    metadata:
+      labels:
+        app: chatwoot
+    spec:
+      initContainers:
+      - name: db-prepare
+        image: chatwoot/chatwoot:latest
+        command: ["bundle", "exec", "rails", "db:chatwoot_prepare"]
+        env:
+        - name: RAILS_ENV
+          value: "production"
+        - name: SECRET_KEY_BASE
+          value: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+        - name: POSTGRES_HOST
+          value: "chatwoot-db"
+        - name: POSTGRES_DATABASE
+          value: "chatwoot"
+        - name: POSTGRES_USERNAME
+          value: "chatwoot"
+        - name: POSTGRES_PASSWORD
+          value: "chatwoot"
+        - name: REDIS_URL
+          value: "redis://chatwoot-redis:6379"
+      containers:
+      - name: chatwoot
+        image: chatwoot/chatwoot:latest
+        command: ["bundle", "exec", "rails", "s", "-b", "0.0.0.0", "-p", "3000"]
+        ports:
+        - containerPort: 3000
+        env:
+        - name: RAILS_ENV
+          value: "production"
+        - name: FRONTEND_URL
+          value: "http://98.92.239.172:30115"
+        - name: SECRET_KEY_BASE
+          value: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+        - name: POSTGRES_HOST
+          value: "chatwoot-db"
+        - name: POSTGRES_DATABASE
+          value: "chatwoot"
+        - name: POSTGRES_USERNAME
+          value: "chatwoot"
+        - name: POSTGRES_PASSWORD
+          value: "chatwoot"
+        - name: REDIS_URL
+          value: "redis://chatwoot-redis:6379"
+        - name: RAILS_LOG_TO_STDOUT
+          value: "true"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatwoot
+  namespace: chatwoot
+spec:
+  type: NodePort
+  selector:
+    app: chatwoot
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30115
+---
+# === BAGISTO (E-commerce) ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bagisto
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bagisto
+  namespace: bagisto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bagisto
+  template:
+    metadata:
+      labels:
+        app: bagisto
+    spec:
+      containers:
+      - name: bagisto
+        image: webkul/bagisto:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bagisto
+  namespace: bagisto
+spec:
+  type: NodePort
+  selector:
+    app: bagisto
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30116

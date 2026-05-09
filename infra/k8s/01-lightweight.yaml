@@ -1,0 +1,618 @@
+# === METABASE (BI/Analytics) - Built-in sample DB + dashboards ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metabase
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metabase
+  namespace: metabase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metabase
+  template:
+    metadata:
+      labels:
+        app: metabase
+    spec:
+      containers:
+      - name: metabase
+        image: metabase/metabase:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx1g"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metabase
+  namespace: metabase
+spec:
+  type: NodePort
+  selector:
+    app: metabase
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30100
+---
+# === KANBOARD (Task Management) - Lightweight PHP, SQLite ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kanboard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kanboard
+  namespace: kanboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kanboard
+  template:
+    metadata:
+      labels:
+        app: kanboard
+    spec:
+      containers:
+      - name: kanboard
+        image: kanboard/kanboard:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kanboard
+  namespace: kanboard
+spec:
+  type: NodePort
+  selector:
+    app: kanboard
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30101
+---
+# === NOCODB (No-code DB) - SQLite default, lightweight ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nocodb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nocodb
+  namespace: nocodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nocodb
+  template:
+    metadata:
+      labels:
+        app: nocodb
+    spec:
+      containers:
+      - name: nocodb
+        image: nocodb/nocodb:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nocodb
+  namespace: nocodb
+spec:
+  type: NodePort
+  selector:
+    app: nocodb
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30102
+---
+# === GHOST (CMS/Publishing) - Single container with SQLite ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ghost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghost
+  namespace: ghost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghost
+  template:
+    metadata:
+      labels:
+        app: ghost
+    spec:
+      containers:
+      - name: ghost
+        image: ghost:5
+        ports:
+        - containerPort: 2368
+        env:
+        - name: url
+          value: "http://98.92.239.172:30103"
+        - name: database__client
+          value: "sqlite3"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghost
+  namespace: ghost
+spec:
+  type: NodePort
+  selector:
+    app: ghost
+  ports:
+  - port: 2368
+    targetPort: 2368
+    nodePort: 30103
+---
+# === LISTMONK (Newsletter) - Go binary, needs Postgres ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: listmonk
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listmonk-db
+  namespace: listmonk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: listmonk-db
+  template:
+    metadata:
+      labels:
+        app: listmonk-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: listmonk
+        - name: POSTGRES_USER
+          value: listmonk
+        - name: POSTGRES_PASSWORD
+          value: listmonk
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listmonk-db
+  namespace: listmonk
+spec:
+  selector:
+    app: listmonk-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listmonk
+  namespace: listmonk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: listmonk
+  template:
+    metadata:
+      labels:
+        app: listmonk
+    spec:
+      initContainers:
+      - name: wait-db
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z listmonk-db 5432; do sleep 2; done']
+      containers:
+      - name: listmonk
+        image: listmonk/listmonk:latest
+        command: ["sh", "-c", "./listmonk --install --idempotent --yes && ./listmonk"]
+        ports:
+        - containerPort: 9000
+        env:
+        - name: LISTMONK_app__address
+          value: "0.0.0.0:9000"
+        - name: LISTMONK_app__admin_username
+          value: "admin"
+        - name: LISTMONK_app__admin_password
+          value: "admin"
+        - name: LISTMONK_db__host
+          value: "listmonk-db"
+        - name: LISTMONK_db__port
+          value: "5432"
+        - name: LISTMONK_db__user
+          value: "listmonk"
+        - name: LISTMONK_db__password
+          value: "listmonk"
+        - name: LISTMONK_db__database
+          value: "listmonk"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listmonk
+  namespace: listmonk
+spec:
+  type: NodePort
+  selector:
+    app: listmonk
+  ports:
+  - port: 9000
+    targetPort: 9000
+    nodePort: 30104
+---
+# === GRAFANA (Observability) - Lightweight Go binary ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: grafana
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  type: NodePort
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30105
+---
+# === BOOKSTACK (Wiki) - Needs MariaDB ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bookstack
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstack-db
+  namespace: bookstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookstack-db
+  template:
+    metadata:
+      labels:
+        app: bookstack-db
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:10
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: bookstack
+        - name: MYSQL_DATABASE
+          value: bookstack
+        - name: MYSQL_USER
+          value: bookstack
+        - name: MYSQL_PASSWORD
+          value: bookstack
+        ports:
+        - containerPort: 3306
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstack-db
+  namespace: bookstack
+spec:
+  selector:
+    app: bookstack-db
+  ports:
+  - port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstack
+  namespace: bookstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookstack
+  template:
+    metadata:
+      labels:
+        app: bookstack
+    spec:
+      containers:
+      - name: bookstack
+        image: lscr.io/linuxserver/bookstack:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: APP_URL
+          value: "http://98.92.239.172:30106"
+        - name: DB_HOST
+          value: "bookstack-db"
+        - name: DB_DATABASE
+          value: "bookstack"
+        - name: DB_USERNAME
+          value: "bookstack"
+        - name: DB_PASSWORD
+          value: "bookstack"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstack
+  namespace: bookstack
+spec:
+  type: NodePort
+  selector:
+    app: bookstack
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30106
+---
+# === EASY!APPOINTMENTS (Booking) - Needs MySQL ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: easyappt
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: easyappt-db
+  namespace: easyappt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: easyappt-db
+  template:
+    metadata:
+      labels:
+        app: easyappt-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: easyappt
+        - name: MYSQL_DATABASE
+          value: easyappointments
+        ports:
+        - containerPort: 3306
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: easyappt-db
+  namespace: easyappt
+spec:
+  selector:
+    app: easyappt-db
+  ports:
+  - port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: easyappt
+  namespace: easyappt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: easyappt
+  template:
+    metadata:
+      labels:
+        app: easyappt
+    spec:
+      containers:
+      - name: easyappt
+        image: alextselegidis/easyappointments:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: BASE_URL
+          value: "http://98.92.239.172:30107"
+        - name: DB_HOST
+          value: "easyappt-db"
+        - name: DB_NAME
+          value: "easyappointments"
+        - name: DB_USERNAME
+          value: "root"
+        - name: DB_PASSWORD
+          value: "easyappt"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: easyappt
+  namespace: easyappt
+spec:
+  type: NodePort
+  selector:
+    app: easyappt
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30107
+---
+# === NEXTCLOUD (Cloud Platform) - SQLite mode ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nextcloud
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      containers:
+      - name: nextcloud
+        image: nextcloud:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: NEXTCLOUD_ADMIN_USER
+          value: "admin"
+        - name: NEXTCLOUD_ADMIN_PASSWORD
+          value: "admin123"
+        - name: SQLITE_DATABASE
+          value: "nextcloud"
+        - name: NEXTCLOUD_TRUSTED_DOMAINS
+          value: "98.92.239.172"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  type: NodePort
+  selector:
+    app: nextcloud
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30108

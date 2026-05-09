@@ -1,7 +1,7 @@
 """Surfer Harness client — implements AgentClient/AgentSession protocols.
 
 Wraps the Navigator (Claude) + Localizer (Holo3 on vLLM) pipeline from the
-benchmarking harness as a UserSim agent.  The orchestrator owns the browser;
+surfer harness as a UserSim agent.  The orchestrator owns the browser;
 we only receive screenshots and return actions in the UserSim vocabulary.
 
 Architecture:
@@ -18,37 +18,19 @@ import asyncio
 import json
 import os
 import re
-import sys
 import time
 from typing import Any
 
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
-from usersim.schemas import Action, AgentResponse, Observation, TurnMeta
-
-# ---------------------------------------------------------------------------
-# Import surfer harness components from the benchmarking directory.
-# ---------------------------------------------------------------------------
-_BENCHMARKING_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "benchmarking")
-)
-if _BENCHMARKING_DIR not in sys.path:
-    sys.path.insert(0, _BENCHMARKING_DIR)
-
-from surfer_harness import (  # noqa: E402
-    Config as SurferConfig,
-    ClaudeClient,
-    HoloLocalizer,
-    ClaudeLocalizer,
+from usersim.harnesses.surfer import (
     CircuitBreaker,
-    make_navigator_prompt,
+    ClaudeClient,
+    ClaudeLocalizer,
+    Config as SurferConfig,
+    HoloLocalizer,
     SCHEMA_REMINDER,
+    make_navigator_prompt,
 )
+from usersim.schemas import Action, AgentResponse, Observation, TurnMeta
 
 # Default vLLM base — Cloudflare Tunnel to VAST.ai B200 in Japan.
 _DEFAULT_VLLM_BASE = "https://gpu.alexkreidler.com"

@@ -1,0 +1,420 @@
+# === MATTERMOST ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mattermost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mattermost-db
+  namespace: mattermost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mattermost-db
+  template:
+    metadata:
+      labels:
+        app: mattermost-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: mattermost
+        - name: POSTGRES_USER
+          value: mattermost
+        - name: POSTGRES_PASSWORD
+          value: mattermost
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mattermost-db
+  namespace: mattermost
+spec:
+  selector:
+    app: mattermost-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mattermost
+  namespace: mattermost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mattermost
+  template:
+    metadata:
+      labels:
+        app: mattermost
+    spec:
+      containers:
+      - name: mattermost
+        image: mattermost/mattermost-team-edition:latest
+        ports:
+        - containerPort: 8065
+        env:
+        - name: MM_SQLSETTINGS_DRIVERNAME
+          value: "postgres"
+        - name: MM_SQLSETTINGS_DATASOURCE
+          value: "postgres://mattermost:mattermost@mattermost-db:5432/mattermost?sslmode=disable"
+        - name: MM_SERVICESETTINGS_SITEURL
+          value: "http://mattermost.usersim.alexkreidler.com"
+        resources:
+          requests: { memory: "256Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mattermost
+  namespace: mattermost
+spec:
+  selector:
+    app: mattermost
+  ports:
+  - port: 8065
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mattermost
+  namespace: mattermost
+spec:
+  rules:
+  - host: mattermost.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mattermost
+            port:
+              number: 8065
+---
+# === ROCKET.CHAT ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rocketchat
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocketchat-db
+  namespace: rocketchat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocketchat-db
+  template:
+    metadata:
+      labels:
+        app: rocketchat-db
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:6
+        args: ["--replSet", "rs0", "--oplogSize", "128"]
+        ports:
+        - containerPort: 27017
+        resources:
+          requests: { memory: "256Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketchat-db
+  namespace: rocketchat
+spec:
+  selector:
+    app: rocketchat-db
+  ports:
+  - port: 27017
+---
+# Mongo needs replica set init
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-init-rs
+  namespace: rocketchat
+spec:
+  template:
+    spec:
+      containers:
+      - name: init
+        image: mongo:6
+        command: ["bash", "-c", "sleep 10 && mongosh --host rocketchat-db --eval 'rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"rocketchat-db:27017\"}]})'"]
+      restartPolicy: OnFailure
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rocketchat
+  namespace: rocketchat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rocketchat
+  template:
+    metadata:
+      labels:
+        app: rocketchat
+    spec:
+      initContainers:
+      - name: wait-db
+        image: mongo:6
+        command: ["bash", "-c", "until mongosh --host rocketchat-db --eval 'rs.status()' 2>/dev/null | grep -q PRIMARY; do sleep 5; done"]
+      containers:
+      - name: rocketchat
+        image: rocket.chat:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URL
+          value: "mongodb://rocketchat-db:27017/rocketchat?replicaSet=rs0"
+        - name: MONGO_OPLOG_URL
+          value: "mongodb://rocketchat-db:27017/local?replicaSet=rs0"
+        - name: ROOT_URL
+          value: "http://rocketchat.usersim.alexkreidler.com"
+        resources:
+          requests: { memory: "384Mi", cpu: "100m" }
+          limits: { memory: "768Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketchat
+  namespace: rocketchat
+spec:
+  selector:
+    app: rocketchat
+  ports:
+  - port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rocketchat
+  namespace: rocketchat
+spec:
+  rules:
+  - host: rocketchat.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rocketchat
+            port:
+              number: 3000
+---
+# === MASTODON ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mastodon
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mastodon-db
+  namespace: mastodon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mastodon-db
+  template:
+    metadata:
+      labels:
+        app: mastodon-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: mastodon
+        - name: POSTGRES_USER
+          value: mastodon
+        - name: POSTGRES_PASSWORD
+          value: mastodon
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mastodon-db
+  namespace: mastodon
+spec:
+  selector:
+    app: mastodon-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mastodon-redis
+  namespace: mastodon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mastodon-redis
+  template:
+    metadata:
+      labels:
+        app: mastodon-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests: { memory: "8Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mastodon-redis
+  namespace: mastodon
+spec:
+  selector:
+    app: mastodon-redis
+  ports:
+  - port: 6379
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mastodon-env
+  namespace: mastodon
+data:
+  LOCAL_DOMAIN: "mastodon.usersim.alexkreidler.com"
+  SINGLE_USER_MODE: "false"
+  DB_HOST: "mastodon-db"
+  DB_PORT: "5432"
+  DB_NAME: "mastodon"
+  DB_USER: "mastodon"
+  DB_PASS: "mastodon"
+  REDIS_HOST: "mastodon-redis"
+  REDIS_PORT: "6379"
+  SECRET_KEY_BASE: "a]UEg3nhFfW29g7t8kLcR4pM5xN2bQ6dYhVj0Sv1Zw9JmAoXi8BDp3Tq5Ky7Hu"
+  OTP_SECRET: "b]VFh4oiG4xH0h8uMdS5qN6yO3cR7eZi1Kw0Tw2Ax8KnBpYj9CEq4Ur6Lz8Iv"
+  VAPID_PRIVATE_KEY: "Y0lJQzFfVGhpc0lzQUZha2VLZXlGb3JEZW1vUHVycG9zZXM="
+  VAPID_PUBLIC_KEY: "QkFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ=="
+  SMTP_SERVER: "localhost"
+  SMTP_PORT: "25"
+  SMTP_FROM_ADDRESS: "mastodon@usersim.alexkreidler.com"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mastodon-setup
+  namespace: mastodon
+spec:
+  template:
+    spec:
+      containers:
+      - name: setup
+        image: ghcr.io/mastodon/mastodon:v4.3
+        command: ["bash", "-c", "sleep 10 && bundle exec rails db:create db:migrate db:seed && bin/tootctl accounts create admin --email admin@usersim.local --confirmed --role Owner && echo 'DONE'"]
+        envFrom:
+        - configMapRef:
+            name: mastodon-env
+        resources:
+          requests: { memory: "256Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+      restartPolicy: OnFailure
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mastodon-web
+  namespace: mastodon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mastodon-web
+  template:
+    metadata:
+      labels:
+        app: mastodon-web
+    spec:
+      containers:
+      - name: web
+        image: ghcr.io/mastodon/mastodon:v4.3
+        command: ["bash", "-c", "bundle exec rails s -p 3000 -b 0.0.0.0"]
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: mastodon-env
+        resources:
+          requests: { memory: "384Mi", cpu: "100m" }
+          limits: { memory: "640Mi" }
+      - name: sidekiq
+        image: ghcr.io/mastodon/mastodon:v4.3
+        command: ["bash", "-c", "bundle exec sidekiq"]
+        envFrom:
+        - configMapRef:
+            name: mastodon-env
+        resources:
+          requests: { memory: "256Mi", cpu: "50m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mastodon-web
+  namespace: mastodon
+spec:
+  selector:
+    app: mastodon-web
+  ports:
+  - port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mastodon
+  namespace: mastodon
+spec:
+  rules:
+  - host: mastodon.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mastodon-web
+            port:
+              number: 3000

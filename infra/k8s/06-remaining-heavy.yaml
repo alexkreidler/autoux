@@ -1,0 +1,804 @@
+# === ERPNEXT ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: erpnext
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erpnext-db
+  namespace: erpnext
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: erpnext-db
+  template:
+    metadata:
+      labels:
+        app: erpnext-db
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:10.11
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: admin
+        - name: MYSQL_DATABASE
+          value: erpnext
+        - name: MYSQL_USER
+          value: erpnext
+        - name: MYSQL_PASSWORD
+          value: erpnext
+        args: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--skip-character-set-client-handshake", "--skip-innodb-read-only-compressed"]
+        ports:
+        - containerPort: 3306
+        resources:
+          requests: { memory: "256Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: erpnext-db
+  namespace: erpnext
+spec:
+  selector:
+    app: erpnext-db
+  ports:
+  - port: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erpnext-redis-cache
+  namespace: erpnext
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: erpnext-redis-cache
+  template:
+    metadata:
+      labels:
+        app: erpnext-redis-cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests: { memory: "8Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: erpnext-redis-cache
+  namespace: erpnext
+spec:
+  selector:
+    app: erpnext-redis-cache
+  ports:
+  - port: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erpnext-redis-queue
+  namespace: erpnext
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: erpnext-redis-queue
+  template:
+    metadata:
+      labels:
+        app: erpnext-redis-queue
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command: ["redis-server", "--port", "6380"]
+        ports:
+        - containerPort: 6380
+        resources:
+          requests: { memory: "8Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: erpnext-redis-queue
+  namespace: erpnext
+spec:
+  selector:
+    app: erpnext-redis-queue
+  ports:
+  - port: 6380
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erpnext
+  namespace: erpnext
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: erpnext
+  template:
+    metadata:
+      labels:
+        app: erpnext
+    spec:
+      containers:
+      - name: erpnext
+        image: frappe/erpnext:v15
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_HOST
+          value: erpnext-db
+        - name: DB_PORT
+          value: "3306"
+        - name: REDIS_CACHE
+          value: "redis://erpnext-redis-cache:6379"
+        - name: REDIS_QUEUE
+          value: "redis://erpnext-redis-queue:6380"
+        - name: LETSENCRYPT_EMAIL
+          value: ""
+        - name: FRAPPE_SITE_NAME_HEADER
+          value: "erpnext.usersim.alexkreidler.com"
+        resources:
+          requests: { memory: "512Mi", cpu: "200m" }
+          limits: { memory: "1536Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: erpnext
+  namespace: erpnext
+spec:
+  selector:
+    app: erpnext
+  ports:
+  - port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: erpnext
+  namespace: erpnext
+spec:
+  rules:
+  - host: erpnext.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: erpnext
+            port:
+              number: 8080
+---
+# === ZAMMAD ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: zammad
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-db
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-db
+  template:
+    metadata:
+      labels:
+        app: zammad-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: zammad
+        - name: POSTGRES_USER
+          value: zammad
+        - name: POSTGRES_PASSWORD
+          value: zammad
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-db
+  namespace: zammad
+spec:
+  selector:
+    app: zammad-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-es
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-es
+  template:
+    metadata:
+      labels:
+        app: zammad-es
+    spec:
+      containers:
+      - name: elasticsearch
+        image: bitnami/elasticsearch:8
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: "-Xms256m -Xmx256m"
+        ports:
+        - containerPort: 9200
+        resources:
+          requests: { memory: "384Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-es
+  namespace: zammad
+spec:
+  selector:
+    app: zammad-es
+  ports:
+  - port: 9200
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-redis
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-redis
+  template:
+    metadata:
+      labels:
+        app: zammad-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests: { memory: "8Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-redis
+  namespace: zammad
+spec:
+  selector:
+    app: zammad-redis
+  ports:
+  - port: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad-memcached
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad-memcached
+  template:
+    metadata:
+      labels:
+        app: zammad-memcached
+    spec:
+      containers:
+      - name: memcached
+        image: memcached:alpine
+        ports:
+        - containerPort: 11211
+        resources:
+          requests: { memory: "32Mi", cpu: "10m" }
+          limits: { memory: "128Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad-memcached
+  namespace: zammad
+spec:
+  selector:
+    app: zammad-memcached
+  ports:
+  - port: 11211
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zammad
+  namespace: zammad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zammad
+  template:
+    metadata:
+      labels:
+        app: zammad
+    spec:
+      initContainers:
+      - name: init
+        image: ghcr.io/zammad/zammad:latest
+        command: ["bash", "-c", "rsync -a /opt/zammad/ /shared/ || true"]
+        volumeMounts:
+        - name: zammad-data
+          mountPath: /shared
+        resources:
+          requests: { memory: "128Mi", cpu: "50m" }
+          limits: { memory: "512Mi" }
+      containers:
+      - name: railsserver
+        image: ghcr.io/zammad/zammad:latest
+        command: ["zammad", "run", "rails"]
+        ports:
+        - containerPort: 3000
+        env:
+        - name: POSTGRESQL_HOST
+          value: zammad-db
+        - name: POSTGRESQL_DB
+          value: zammad
+        - name: POSTGRESQL_USER
+          value: zammad
+        - name: POSTGRESQL_PASS
+          value: zammad
+        - name: ELASTICSEARCH_HOST
+          value: zammad-es
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: MEMCACHE_SERVERS
+          value: "zammad-memcached:11211"
+        - name: REDIS_URL
+          value: "redis://zammad-redis:6379"
+        volumeMounts:
+        - name: zammad-data
+          mountPath: /opt/zammad
+        resources:
+          requests: { memory: "384Mi", cpu: "100m" }
+          limits: { memory: "768Mi" }
+      volumes:
+      - name: zammad-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zammad
+  namespace: zammad
+spec:
+  selector:
+    app: zammad
+  ports:
+  - port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zammad
+  namespace: zammad
+spec:
+  rules:
+  - host: zammad.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: zammad
+            port:
+              number: 3000
+---
+# === DISCOURSE ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: discourse
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discourse-db
+  namespace: discourse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discourse-db
+  template:
+    metadata:
+      labels:
+        app: discourse-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: discourse
+        - name: POSTGRES_USER
+          value: discourse
+        - name: POSTGRES_PASSWORD
+          value: discourse
+        ports:
+        - containerPort: 5432
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discourse-db
+  namespace: discourse
+spec:
+  selector:
+    app: discourse-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discourse-redis
+  namespace: discourse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discourse-redis
+  template:
+    metadata:
+      labels:
+        app: discourse-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests: { memory: "8Mi", cpu: "10m" }
+          limits: { memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discourse-redis
+  namespace: discourse
+spec:
+  selector:
+    app: discourse-redis
+  ports:
+  - port: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discourse
+  namespace: discourse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discourse
+  template:
+    metadata:
+      labels:
+        app: discourse
+    spec:
+      containers:
+      - name: discourse
+        image: bitnami/discourse:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DISCOURSE_HOST
+          value: "discourse.usersim.alexkreidler.com"
+        - name: DISCOURSE_DATABASE_HOST
+          value: "discourse-db"
+        - name: DISCOURSE_DATABASE_NAME
+          value: "discourse"
+        - name: DISCOURSE_DATABASE_USER
+          value: "discourse"
+        - name: DISCOURSE_DATABASE_PASSWORD
+          value: "discourse"
+        - name: DISCOURSE_REDIS_HOST
+          value: "discourse-redis"
+        - name: DISCOURSE_REDIS_PORT_NUMBER
+          value: "6379"
+        - name: DISCOURSE_USERNAME
+          value: "admin"
+        - name: DISCOURSE_PASSWORD
+          value: "admin12345"
+        - name: DISCOURSE_EMAIL
+          value: "admin@usersim.local"
+        - name: DISCOURSE_SMTP_HOST
+          value: "localhost"
+        - name: DISCOURSE_SMTP_PORT
+          value: "25"
+        - name: BITNAMI_DEBUG
+          value: "true"
+        resources:
+          requests: { memory: "512Mi", cpu: "200m" }
+          limits: { memory: "1536Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discourse
+  namespace: discourse
+spec:
+  selector:
+    app: discourse
+  ports:
+  - port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: discourse
+  namespace: discourse
+spec:
+  rules:
+  - host: discourse.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: discourse
+            port:
+              number: 3000
+---
+# === HULY ===
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: huly
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: huly-mongo
+  namespace: huly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: huly-mongo
+  template:
+    metadata:
+      labels:
+        app: huly-mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:7
+        args: ["--replSet", "rs0"]
+        ports:
+        - containerPort: 27017
+        resources:
+          requests: { memory: "256Mi", cpu: "100m" }
+          limits: { memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: huly-mongo
+  namespace: huly
+spec:
+  selector:
+    app: huly-mongo
+  ports:
+  - port: 27017
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: huly-mongo-init
+  namespace: huly
+spec:
+  template:
+    spec:
+      containers:
+      - name: init
+        image: mongo:7
+        command: ["bash", "-c", "sleep 10 && mongosh --host huly-mongo --eval 'rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"huly-mongo:27017\"}]})'"]
+      restartPolicy: OnFailure
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: huly-elastic
+  namespace: huly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: huly-elastic
+  template:
+    metadata:
+      labels:
+        app: huly-elastic
+    spec:
+      containers:
+      - name: elasticsearch
+        image: elasticsearch:7.17.24
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: "-Xms256m -Xmx256m"
+        - name: xpack.security.enabled
+          value: "false"
+        ports:
+        - containerPort: 9200
+        resources:
+          requests: { memory: "384Mi", cpu: "100m" }
+          limits: { memory: "640Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: huly-elastic
+  namespace: huly
+spec:
+  selector:
+    app: huly-elastic
+  ports:
+  - port: 9200
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: huly-minio
+  namespace: huly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: huly-minio
+  template:
+    metadata:
+      labels:
+        app: huly-minio
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:latest
+        args: ["server", "/data", "--console-address", ":9001"]
+        env:
+        - name: MINIO_ROOT_USER
+          value: "minioadmin"
+        - name: MINIO_ROOT_PASSWORD
+          value: "minioadmin"
+        ports:
+        - containerPort: 9000
+        resources:
+          requests: { memory: "64Mi", cpu: "50m" }
+          limits: { memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: huly-minio
+  namespace: huly
+spec:
+  selector:
+    app: huly-minio
+  ports:
+  - port: 9000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: huly
+  namespace: huly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: huly
+  template:
+    metadata:
+      labels:
+        app: huly
+    spec:
+      containers:
+      - name: huly
+        image: hardcoreeng/huly:latest
+        ports:
+        - containerPort: 8083
+        env:
+        - name: HULY_SECRET
+          value: "usersim-huly-secret-key-change-me"
+        - name: SERVER_ADDRESS
+          value: "0.0.0.0"
+        - name: ACCOUNTS_URL
+          value: "http://huly.usersim.alexkreidler.com"
+        - name: MONGO_URL
+          value: "mongodb://huly-mongo:27017/huly?replicaSet=rs0"
+        - name: ELASTIC_URL
+          value: "http://huly-elastic:9200"
+        - name: MINIO_ENDPOINT
+          value: "huly-minio"
+        - name: MINIO_ACCESS_KEY
+          value: "minioadmin"
+        - name: MINIO_SECRET_KEY
+          value: "minioadmin"
+        resources:
+          requests: { memory: "512Mi", cpu: "200m" }
+          limits: { memory: "1Gi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: huly
+  namespace: huly
+spec:
+  selector:
+    app: huly
+  ports:
+  - port: 8083
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: huly
+  namespace: huly
+spec:
+  rules:
+  - host: huly.usersim.alexkreidler.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: huly
+            port:
+              number: 8083
