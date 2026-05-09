@@ -84,13 +84,15 @@ export interface ConfigDef {
   tasks: TaskDef[];
 }
 
+// Mirror of usersim/web/server.py:RunRequest
 export interface RunPayload {
   config: string;
-  target_url?: string;
-  personas: string[];
-  tasks: string[];
+  personas?: string[];
+  tasks?: string[];
   concurrency: number;
-  max_turns: number;
-  iteration?: number;
-  agent: { type: string; endpoint?: string };
+  max_turns?: number;
+  iteration: number;
+  agent?: string;
+  agent_endpoint?: string;
+  label?: string;
 }

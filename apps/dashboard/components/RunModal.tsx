@@ -32,9 +32,10 @@ export default function RunModal({ personas, onClose }: Props) {
   const [selectedPersonas, setSelectedPersonas] = useState<Set<string>>(
     new Set(Object.keys(personas))
   );
-  const [concurrency, setConcurrency] = useState(9);
+  const [concurrency, setConcurrency] = useState(20);
   const [maxTurns, setMaxTurns] = useState(20);
   const [iterLabel, setIterLabel] = useState("");
+  const [runLabel, setRunLabel] = useState("");
   const [agent, setAgent] = useState("northstar");
   const [agentEndpoint, setAgentEndpoint] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -78,19 +79,20 @@ export default function RunModal({ personas, onClose }: Props) {
     [onClose]
   );
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     const payload: RunPayload = {
       config: selectedConfig.path,
-      target_url: targetUrl || undefined,
       personas: [...selectedPersonas],
       tasks: [...selectedTasks],
       concurrency,
       max_turns: maxTurns,
-      iteration: iterLabel ? parseInt(iterLabel, 10) : undefined,
-      agent: { type: agent, endpoint: agentEndpoint || undefined },
+      iteration: iterLabel ? parseInt(iterLabel, 10) : 0,
+      agent,
+      agent_endpoint: agentEndpoint || undefined,
+      label: runLabel || undefined,
     };
     try {
       const res = await fetch(apiUrl("/api/run"), {
@@ -98,7 +100,10 @@ export default function RunModal({ personas, onClose }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(`${res.status} ${res.statusText}${detail ? ` — ${detail}` : ""}`);
+      }
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "unknown error");
@@ -188,11 +193,14 @@ export default function RunModal({ personas, onClose }: Props) {
 
           {/* concurrency */}
           <div>
-            <label className={labelClass}>concurrency — {concurrency}</label>
+            <label className={labelClass}>
+              concurrency — {concurrency}
+              {concurrency > 50 && <span className="ml-2 text-rust">(may hit kernel/tzafon quotas)</span>}
+            </label>
             <input
               type="range"
               min={1}
-              max={24}
+              max={Math.max(100, Object.keys(personas).length)}
               value={concurrency}
               onChange={(e) => setConcurrency(Number(e.target.value))}
               className="w-full accent-olive"
@@ -205,16 +213,28 @@ export default function RunModal({ personas, onClose }: Props) {
             <input
               type="range"
               min={5}
-              max={30}
+              max={50}
               value={maxTurns}
               onChange={(e) => setMaxTurns(Number(e.target.value))}
               className="w-full accent-olive"
             />
           </div>
 
-          {/* iteration label */}
+          {/* run label */}
           <div>
-            <label className={labelClass}>iteration label (optional)</label>
+            <label className={labelClass}>run label (optional, slugifies into out_dir)</label>
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="e.g. taxcaster_100p"
+              value={runLabel}
+              onChange={(e) => setRunLabel(e.target.value)}
+            />
+          </div>
+
+          {/* iteration number override */}
+          <div>
+            <label className={labelClass}>iteration number (optional, default auto)</label>
             <input
               type="text"
               className={inputClass}
