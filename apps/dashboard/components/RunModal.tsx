@@ -34,6 +34,8 @@ export default function RunModal({ personas, onClose }: Props) {
   );
   const [concurrency, setConcurrency] = useState(20);
   const [maxTurns, setMaxTurns] = useState(20);
+  const [stuckThreshold, setStuckThreshold] = useState(3);
+  const [patience, setPatience] = useState<number | "">("");
   const [iterLabel, setIterLabel] = useState("");
   const [runLabel, setRunLabel] = useState("");
   const [agent, setAgent] = useState("northstar");
@@ -93,6 +95,8 @@ export default function RunModal({ personas, onClose }: Props) {
       agent,
       agent_endpoint: agentEndpoint || undefined,
       label: runLabel || undefined,
+      stuck_threshold: stuckThreshold,
+      patience: patience === "" ? undefined : patience,
     };
     try {
       const res = await fetch(apiUrl("/api/run"), {
@@ -213,11 +217,48 @@ export default function RunModal({ personas, onClose }: Props) {
             <input
               type="range"
               min={5}
-              max={50}
+              max={100}
               value={maxTurns}
               onChange={(e) => setMaxTurns(Number(e.target.value))}
               className="w-full accent-olive"
             />
+          </div>
+
+          {/* stuck threshold */}
+          <div>
+            <label className={labelClass}>
+              stuck threshold — {stuckThreshold === 0 ? "disabled" : `${stuckThreshold} turns of no DOM change`}
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={20}
+              value={stuckThreshold}
+              onChange={(e) => setStuckThreshold(Number(e.target.value))}
+              className="w-full accent-olive"
+            />
+          </div>
+
+          {/* patience override */}
+          <div>
+            <label className={labelClass}>
+              patience override —{" "}
+              {patience === "" ? "use persona's own patience_steps" : patience === 0 ? "disabled (no abandonment)" : `${patience} turns`}
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={50}
+              value={patience === "" ? -1 : patience}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setPatience(v < 0 ? "" : v);
+              }}
+              className="w-full accent-olive"
+            />
+            <div className="text-[10px] text-muted mt-1">
+              drag to leftmost (-1) to use each persona&apos;s own patience.
+            </div>
           </div>
 
           {/* run label */}

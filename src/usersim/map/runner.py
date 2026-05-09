@@ -40,6 +40,8 @@ async def run_iteration(
     per_turn_timeout_s: float = 60.0,
     step_settle_ms: int = 500,
     record_replay: bool = True,
+    stuck_threshold: int = 3,
+    patience_override: int | None = None,
 ) -> list[Trajectory]:
     out_dir.mkdir(parents=True, exist_ok=True)
     sem = asyncio.Semaphore(concurrency)
@@ -58,6 +60,8 @@ async def run_iteration(
                 per_turn_timeout_s=per_turn_timeout_s,
                 step_settle_ms=step_settle_ms,
                 record_replay=record_replay,
+                stuck_threshold=stuck_threshold,
+                patience_override=patience_override,
             ))
             if traj is not None:
                 results.append(traj)

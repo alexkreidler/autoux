@@ -89,6 +89,8 @@ class RunRequest(BaseModel):
     agent: str | None = None                 # provider override; None = config/default
     agent_endpoint: str | None = None
     label: str | None = None                 # optional human label, becomes part of out_dir
+    stuck_threshold: int | None = None       # 0 disables stuck-loop terminator
+    patience: int | None = None              # 0 disables abandonment cutoff
 
 
 class RunInfo(BaseModel):
@@ -139,6 +141,12 @@ def _spawn_run(req: RunRequest) -> RunInfo:
         cmd += ["--agent", req.agent]
     if req.agent_endpoint:
         cmd += ["--agent-endpoint", req.agent_endpoint]
+    if req.max_turns is not None:
+        cmd += ["--max-turns", str(req.max_turns)]
+    if req.stuck_threshold is not None:
+        cmd += ["--stuck-threshold", str(req.stuck_threshold)]
+    if req.patience is not None:
+        cmd += ["--patience", str(req.patience)]
 
     env = os.environ.copy()
     log_path = out_dir / "run.log"

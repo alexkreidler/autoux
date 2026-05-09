@@ -95,4 +95,6 @@ export interface RunPayload {
   agent?: string;
   agent_endpoint?: string;
   label?: string;
+  stuck_threshold?: number;  // 0 disables the stuck-loop terminator
+  patience?: number;         // 0 disables persona-patience abandonment
 }

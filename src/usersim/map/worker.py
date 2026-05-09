@@ -181,6 +181,8 @@ async def run_one(
     step_settle_ms: int = 500,
     record_replay: bool = True,
     registry_callback: Optional[Callable[[ActiveRollout], None]] = None,
+    stuck_threshold: int = 3,         # turns of no DOM change → terminate "stuck"
+    patience_override: int | None = None,  # if set, overrides persona.patience_steps
 ) -> Trajectory:
     started = datetime.now()
     traj_key = f"{persona.id}__{task.id}"
@@ -412,13 +414,14 @@ async def run_one(
                     except Exception:
                         pass
 
-                # Stuck detection
-                if consecutive_unchanged >= 3:
+                # Stuck detection (disable by passing stuck_threshold=0 or negative)
+                if stuck_threshold > 0 and consecutive_unchanged >= stuck_threshold:
                     terminal_reason = "stuck"
                     break
 
                 # Patience cutoff
-                if turn + 1 >= persona.patience_steps:
+                effective_patience = patience_override if patience_override is not None else persona.patience_steps
+                if effective_patience > 0 and turn + 1 >= effective_patience:
                     terminal_reason = "abandoned"
                     break
 

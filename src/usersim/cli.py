@@ -101,7 +101,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         concurrency=args.concurrency,
         viewport_width=config.get("viewport", {}).get("width", 1280),
         viewport_height=config.get("viewport", {}).get("height", 800),
-        max_turns=config.get("max_turns", 20),
+        max_turns=args.max_turns or config.get("max_turns", 20),
+        stuck_threshold=args.stuck_threshold,
+        patience_override=args.patience,
     ))
 
     prev_path = Path(args.prev_feedback) if args.prev_feedback else None
@@ -154,7 +156,9 @@ def cmd_debug(args: argparse.Namespace) -> int:
         browser_provider=browser_provider,
         out_dir=out_dir,
         concurrency=1,
-        max_turns=config.get("max_turns", 20),
+        max_turns=args.max_turns or config.get("max_turns", 20),
+        stuck_threshold=args.stuck_threshold,
+        patience_override=args.patience,
     ))
     if trajectories:
         t = trajectories[0]
@@ -186,6 +190,12 @@ def main() -> int:
                     help="agent provider; overrides config 'agent.type'. default: from config or 'northstar'")
     pr.add_argument("--agent-endpoint",
                     help="agent endpoint URL (for http-based providers like holotron)")
+    pr.add_argument("--max-turns", type=int, default=None,
+                    help="hard turn cap per rollout; overrides config 'max_turns'")
+    pr.add_argument("--stuck-threshold", type=int, default=3,
+                    help="terminate as 'stuck' after N consecutive turns of unchanged DOM. 0 disables.")
+    pr.add_argument("--patience", type=int, default=None,
+                    help="override per-persona patience_steps for this run. 0 disables abandonment.")
     pr.set_defaults(func=cmd_run)
 
     pd = sub.add_parser("debug", help="run one persona × one task")
@@ -197,6 +207,9 @@ def main() -> int:
                     help="agent provider; overrides config")
     pd.add_argument("--agent-endpoint",
                     help="agent endpoint URL")
+    pd.add_argument("--max-turns", type=int, default=None)
+    pd.add_argument("--stuck-threshold", type=int, default=3)
+    pd.add_argument("--patience", type=int, default=None)
     pd.set_defaults(func=cmd_debug)
 
     args = p.parse_args()
