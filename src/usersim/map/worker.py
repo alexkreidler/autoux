@@ -80,6 +80,44 @@ async def _check_success(page: Page, task: Task) -> tuple[bool, str | None]:
     return False, None
 
 
+# Map common lower/short modifier names → Playwright's `KeyboardModifier`
+# spelling. Playwright is strict: `Control+A` works, `ctrl+a` does not.
+# We accept either case from clients (some agents narrate keys naturally,
+# e.g. "ctrl+a") and rewrite to the canonical form before dispatching.
+_KEY_ALIASES: dict[str, str] = {
+    "ctrl": "Control", "control": "Control",
+    "alt": "Alt", "option": "Alt",
+    "shift": "Shift",
+    "meta": "Meta", "cmd": "Meta", "command": "Meta", "win": "Meta",
+    "esc": "Escape", "escape": "Escape",
+    "enter": "Enter", "return": "Enter",
+    "tab": "Tab", "backspace": "Backspace", "delete": "Delete",
+    "space": "Space", "spacebar": "Space",
+    "up": "ArrowUp", "down": "ArrowDown",
+    "left": "ArrowLeft", "right": "ArrowRight",
+    "pageup": "PageUp", "pagedown": "PageDown",
+    "home": "Home", "end": "End",
+}
+
+
+def _normalize_key(spec: str) -> str:
+    """Normalize a keypress spec to Playwright form. Accepts `ctrl+a`,
+    `Control+A`, `cmd+shift+p`, single chars, named keys (`Enter`)."""
+    if not spec:
+        return spec
+    parts = spec.split("+")
+    out: list[str] = []
+    for p in parts:
+        low = p.strip().lower()
+        if low in _KEY_ALIASES:
+            out.append(_KEY_ALIASES[low])
+        elif len(p) == 1 and p.isalpha():
+            out.append(p.upper())  # Playwright wants `A` not `a` when chained with modifier
+        else:
+            out.append(p)  # already-canonical (Enter, F1, etc.) or unknown — pass through
+    return "+".join(out)
+
+
 async def _execute_action(page: Page, action: Action) -> None:
     t = action.type
     a = action.args
@@ -103,7 +141,7 @@ async def _execute_action(page: Page, action: Action) -> None:
             await page.keyboard.type(a.get("text", ""))
         elif t == "keypress":
             for k in a.get("keys", []):
-                await page.keyboard.press(k)
+                await page.keyboard.press(_normalize_key(k))
         elif t == "scroll":
             await page.mouse.move(a["x"], a["y"])
             await page.mouse.wheel(a.get("scroll_x", 0), a.get("scroll_y", 0))
@@ -118,9 +156,9 @@ async def _execute_action(page: Page, action: Action) -> None:
         elif t == "mouse_up":
             await page.mouse.up(button=a.get("button", "left"))
         elif t == "key_down":
-            await page.keyboard.down(a.get("key", ""))
+            await page.keyboard.down(_normalize_key(a.get("key", "")))
         elif t == "key_up":
-            await page.keyboard.up(a.get("key", ""))
+            await page.keyboard.up(_normalize_key(a.get("key", "")))
         else:
             print(f"  ! unhandled action type: {t}", file=sys.stderr)
     except Exception as e:

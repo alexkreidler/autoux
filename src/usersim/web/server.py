@@ -411,6 +411,73 @@ def reap_registry() -> dict:
     return {"registry_cleared": True, "kernel_sessions_reaped": reaped_kernel}
 
 
+def _find_trajectory_jsonl(persona_id: str, task_id: str, browser_session_id: str | None) -> Path | None:
+    """Find the most-recent trajectory JSONL file matching persona+task. If a
+    browser_session_id is given, prefer the file whose header references it.
+    """
+    runs = _project_root() / "runs"
+    if not runs.exists():
+        return None
+    candidates: list[tuple[float, Path]] = []
+    for d in runs.iterdir():
+        if not d.is_dir():
+            continue
+        f = d / "trajectories" / f"{persona_id}__{task_id}.jsonl"
+        if f.exists():
+            candidates.append((f.stat().st_mtime, f))
+    if not candidates:
+        return None
+    # Sort newest first
+    candidates.sort(reverse=True)
+    if browser_session_id:
+        for _, f in candidates:
+            try:
+                with f.open() as fh:
+                    line = fh.readline()
+                    head = json.loads(line) if line.strip() else {}
+                if head.get("browser_session_id") == browser_session_id:
+                    return f
+            except Exception:
+                continue
+    return candidates[0][1]
+
+
+@app.get("/api/trajectory")
+def trajectory(persona_id: str, task_id: str, browser_session_id: str | None = None) -> dict:
+    """Return the full streamed trajectory for a (persona, task) pair as an
+    array of records (`kind: header|step|footer`). Used by the dashboard's
+    focused-cell view to render the full transcript of a rollout.
+    """
+    f = _find_trajectory_jsonl(persona_id, task_id, browser_session_id)
+    if f is None:
+        raise HTTPException(status_code=404, detail="trajectory not found")
+    out: list[dict] = []
+    try:
+        for line in f.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"could not read trajectory: {e}")
+    return {"path": str(f.relative_to(_project_root())), "records": out}
+
+
+@app.get("/api/thumbnail")
+def thumbnail(path: str):
+    """Serve a screenshot thumbnail referenced by a trajectory step."""
+    if ".." in path or path.startswith("/"):
+        raise HTTPException(status_code=400, detail="invalid path")
+    candidates = [_project_root() / "runs" / path, _project_root() / path]
+    for p in candidates:
+        if p.exists() and p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png"):
+            return FileResponse(p, media_type=f"image/{p.suffix.lower().lstrip('.')}")
+    raise HTTPException(status_code=404)
+
+
 @app.get("/api/run/{run_id}/grid")
 def run_grid(run_id: str):
     """Serve the auto-composed grid.mp4 for a completed run."""

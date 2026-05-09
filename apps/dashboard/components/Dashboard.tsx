@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiUrl, fetchJson } from "@/lib/api";
 import { useSessions } from "./useSessions";
 import MetricBar from "./MetricBar";
@@ -53,20 +53,31 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", onKey);
   }, [focusedId, selectMode, selection.size, sessions]);
 
-  // Drop selections that no longer exist (run finished, registry pruned)
+  // Drop selections that no longer exist (run finished, registry pruned).
+  // We DON'T clear focusedId — the focused view shows the trajectory file
+  // and an "ended" state when the session leaves the registry.
   useEffect(() => {
     const live = new Set(sessions.map((s) => s.browser_session_id));
     if (Array.from(selection).some((id) => !live.has(id))) {
       const next = new Set(Array.from(selection).filter((id) => live.has(id)));
       setSelection(next);
     }
-    if (focusedId && !live.has(focusedId)) setFocusedId(null);
-  }, [sessions, selection, focusedId]);
+  }, [sessions, selection]);
 
-  const focused = useMemo(
-    () => sessions.find((s) => s.browser_session_id === focusedId) ?? null,
-    [sessions, focusedId]
-  );
+  // Snapshot the focused session at click-time so it survives the session
+  // disappearing from the live registry (post-run cleanup). isLive flips
+  // false when the registry no longer contains the id.
+  const [focusedSnapshot, setFocusedSnapshot] = useState<typeof sessions[number] | null>(null);
+  useEffect(() => {
+    if (!focusedId) {
+      setFocusedSnapshot(null);
+      return;
+    }
+    const live = sessions.find((s) => s.browser_session_id === focusedId);
+    if (live) setFocusedSnapshot(live);
+  }, [focusedId, sessions]);
+  const focused = focusedSnapshot;
+  const focusedIsLive = !!focused && sessions.some((s) => s.browser_session_id === focused.browser_session_id);
 
   const handleFocus = useCallback((id: string) => {
     setFocusedId(id);
@@ -192,6 +203,7 @@ export default function Dashboard() {
         <FocusedCell
           session={focused}
           persona={personas[focused.persona_id]}
+          isLive={focusedIsLive}
           onClose={() => setFocusedId(null)}
         />
       )}
