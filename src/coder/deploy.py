@@ -124,39 +124,27 @@ class K8sBackend:
         agent = "claude-cli"
         local_tag = f"{self._app}-dev:{version}"
 
-        # --- 1. Depot build --save ---
+        # --- 1. Depot build + push in one step ---
+        registry = self._c.registry or "ghcr.io/alexkreidler"
+        image = f"{registry}/{self._app}-dev:{version}"
         build_cmd = [
             "depot", "build",
             "--project", self._c.depot_project,
+            "--platform", "linux/amd64",
             "-f", self._c.dockerfile,
-            "-t", local_tag,
-            "--save",
+            "-t", image,
+            "--push",
             ".",
         ]
         for k, v in self._c.build_args.items():
             build_cmd.extend(["--build-arg", f"{k}={v}"])
 
-        print(f"  [deploy] depot build --save -t {local_tag}")
+        print(f"  [deploy] depot build --push -t {image}")
         ok, err = await _run_check(build_cmd, cwd=repo_dir)
         if not ok:
             return DeployResult(
                 success=False,
-                error=f"depot build failed: {err}",
-                duration_ms=_elapsed(started),
-            )
-
-        # --- 2. Push to GHCR (or custom registry) ---
-        registry = self._c.registry or "ghcr.io/alexkreidler"
-        image = f"{registry}/{self._app}-dev:{version}"
-        print(f"  [deploy] depot push → {image}")
-        ok, err = await _run_check([
-            "depot", "push", "--project", self._c.depot_project,
-            "-t", image,
-        ])
-        if not ok:
-            return DeployResult(
-                success=False, image_tag=local_tag,
-                error=f"depot push failed: {err}",
+                error=f"depot build+push failed: {err}",
                 duration_ms=_elapsed(started),
             )
 
