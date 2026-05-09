@@ -16,7 +16,46 @@ import subprocess
 import sys
 from pathlib import Path
 
-CELL_W, CELL_H = 640, 400
+CELL_W, CELL_H = 480, 300
+
+
+def _max_duration(videos: list[Path]) -> float:
+    """Probe each input and return the longest duration in seconds. Used to
+    bound the output explicitly — `-shortest` doesn't reliably truncate when
+    paired with infinite lavfi filler streams + hardware encoders."""
+    best = 0.0
+    for v in videos:
+        out = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=nw=1:nk=1", str(v)],
+            capture_output=True, text=True, check=False,
+        ).stdout.strip()
+        try:
+            best = max(best, float(out))
+        except ValueError:
+            pass
+    return best or 60.0  # fallback if probing fails
+
+
+def _detect_hw_encoder() -> list[str]:
+    """Pick the fastest video encoder available. On Apple Silicon, the
+    hardware h264 encoder is 10-50x faster than libx264 for grid composition.
+    Falls back to libx264 if videotoolbox is unavailable."""
+    try:
+        out = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-encoders"],
+            capture_output=True, text=True, check=False,
+        ).stdout
+    except FileNotFoundError:
+        return ["-c:v", "libx264", "-preset", "fast", "-crf", "23"]
+    if "h264_videotoolbox" in out:
+        return [
+            "-c:v", "h264_videotoolbox",
+            "-b:v", "6M",            # bitrate-based; ~6 Mb/s plenty for the grid
+            "-allow_sw", "1",
+            "-tag:v", "avc1",
+        ]
+    return ["-c:v", "libx264", "-preset", "fast", "-crf", "23"]
 
 
 def load_videos(iter_dir: Path, limit: int | None) -> list[Path]:
@@ -86,17 +125,19 @@ def main() -> None:
     for _ in range(fillers):
         cmd += ["-f", "lavfi", "-i", f"color=black:size={CELL_W}x{CELL_H}:rate=30"]
 
+    duration = _max_duration(videos)
     cmd += [
         "-filter_complex", build_filter(n, cols, rows),
         "-map", "[out]",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+        *_detect_hw_encoder(),
         "-pix_fmt", "yuv420p",
-        # QuickTime-friendly: high profile + level 4.0, moov at front for
-        # streaming/partial-read tolerance, constant 30fps to avoid VFR sync.
-        "-profile:v", "high", "-level", "4.0",
+        # QuickTime-friendly: moov at front for partial-read tolerance,
+        # constant 30fps to avoid VFR sync.
         "-r", "30",
         "-movflags", "+faststart",
-        "-shortest",
+        # Explicit duration cap — `-shortest` is unreliable when the grid
+        # has lavfi filler streams (infinite) alongside finite inputs.
+        "-t", f"{duration:.3f}",
         str(out),
     ]
     subprocess.run(cmd, check=True)
