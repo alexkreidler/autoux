@@ -80,3 +80,4 @@ slides/dist/
 # build artifacts and node_modules under demo/
 demo/node_modules/
 demo/mega2.gif
+slides/_marp/
