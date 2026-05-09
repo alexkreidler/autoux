@@ -156,10 +156,12 @@ Actions that don't need coordinates:
 - **Form fields may not show values in screenshots** even when filled correctly. Trust the action result messages. After filling all fields, click Submit.
 
 ## Output Format
-Always respond with a single JSON object:
-{{"thought": "what I see and plan to do", "action": "click", "element": "the search input field at the top"}}
-{{"thought": "I need to search", "action": "fill", "element": "the search box", "text": "my query", "press_enter": true}}
-{{"thought": "I can see the answer", "action": "answer", "text": "the answer"}}"""
+Always respond with a single JSON object. Examples:
+{{"thought": "I need to log in. The username field is a text input — must use fill.", "action": "fill", "element": "the username text input", "text": "admin"}}
+{{"thought": "Username is filled. Now the password field.", "action": "fill", "element": "the password input", "text": "admin"}}
+{{"thought": "Both fields filled. Now click the submit button.", "action": "click", "element": "the 'Log In' button at the bottom of the form"}}
+{{"thought": "I need to search.", "action": "fill", "element": "the search box", "text": "my query", "press_enter": true}}
+{{"thought": "I can see the answer.", "action": "answer", "text": "the answer"}}"""
 
 
 VALIDATOR_PROMPT = """You are an answer validator for a browser automation agent.
