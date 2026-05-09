@@ -6,6 +6,7 @@ import { apiUrl, fetchJson } from "@/lib/api";
 import type { ActiveRollout, Persona } from "@/lib/types";
 import { actionLabel } from "@/lib/utils";
 
+
 interface Props {
   session: ActiveRollout;
   persona?: Persona;
@@ -46,6 +47,20 @@ const STATUS_BADGE: Record<string, string> = {
   abandoned: "border-rust bg-rust text-white",
   error: "border-rust bg-rust text-white",
 };
+
+// Replay path is either on the session (historical) or we try to infer from trajectory
+function resolveReplayPath(session: ActiveRollout, trajPath: string | null): string | null {
+  // Historical sessions carry replay_path directly
+  const hist = session as ActiveRollout & { replay_path?: string | null };
+  if (hist.replay_path) return hist.replay_path;
+  // Infer from trajectory path for live sessions that finished
+  if (!trajPath) return null;
+  const m = trajPath.match(/(?:^|\/)runs\/(.+?)\/trajectories\//);
+  if (!m) return null;
+  const runDir = m[1];
+  const stem = trajPath.replace(/.*\/trajectories\//, "").replace(/\.jsonl$/, "");
+  return `${runDir}/replays/${stem}.mp4`;
+}
 
 export default function FocusedCell({ session: s, persona, isLive, onClose }: Props) {
   const status = s.stage1_status ?? "running";
@@ -101,6 +116,8 @@ export default function FocusedCell({ session: s, persona, isLive, onClose }: Pr
 
   const steps = traj?.records.filter((r) => r.kind === "step") ?? [];
   const footer = traj?.records.find((r) => r.kind === "footer");
+  const replayPath = resolveReplayPath(s, traj?.path ?? null);
+  const replayUrl = replayPath ? apiUrl(`/api/replay?path=${encodeURIComponent(replayPath)}`) : null;
 
   return (
     <div
@@ -120,6 +137,17 @@ export default function FocusedCell({ session: s, persona, isLive, onClose }: Pr
               allow="clipboard-read; clipboard-write"
               title={`focused ${s.browser_session_id}`}
             />
+          ) : replayUrl ? (
+            // session ended — replay video available
+            <div className="w-full h-full bg-ink flex flex-col">
+              <video
+                src={replayUrl}
+                controls
+                autoPlay={false}
+                className="w-full h-full object-contain"
+                title={`replay: ${s.persona_id} · ${s.task_id}`}
+              />
+            </div>
           ) : (
             // session ended — show last-known screenshot if we have one
             <div className="w-full h-full bg-cream flex flex-col items-center justify-center gap-3">
@@ -130,7 +158,7 @@ export default function FocusedCell({ session: s, persona, isLive, onClose }: Pr
                 </div>
                 {footer?.terminal_reason && (
                   <div className="text-[11px] text-muted mt-1 lowercase">
-                    {footer.terminal_reason.replace("_", " ")}
+                    {footer.terminal_reason.replace(/_/g, " ")}
                     {footer.error && <span className="text-rust"> · {footer.error.slice(0, 80)}</span>}
                   </div>
                 )}

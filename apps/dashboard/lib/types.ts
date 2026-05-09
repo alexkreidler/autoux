@@ -84,6 +84,59 @@ export interface ConfigDef {
   tasks: TaskDef[];
 }
 
+// Historical run entry from /api/runs/historical
+export interface HistoricalRun {
+  run_dir: string;          // e.g. "sweep_open_20260509_144457"
+  display_name: string;     // human-readable label
+  layout: "flat" | "sweep"; // flat = iter_X, sweep = multi-app nested
+  apps: string[];           // for sweep: list of app sub-dirs
+  n_trajectories: number;
+  started_at: string | null;
+  has_feedback: boolean;
+  has_grid_mp4: boolean;
+  target_summary: string | null;
+}
+
+// A "loaded" historical run — sessions reconstructed from trajectory footers
+export interface HistoricalSession {
+  browser_session_id: string; // synthetic: run_dir + "__" + persona + "__" + task
+  persona_id: string;
+  task_id: string;
+  target_url: string;
+  started_at: string;
+  live_view_url: string;       // empty — no live view for historical
+  current_turn: number;
+  last_action: null;
+  last_reasoning: string | null;
+  current_url: string | null;
+  current_title: string | null;
+  current_dom_hash: string | null;
+  consecutive_unchanged: number;
+  cumulative_tokens: {
+    model_ms: number; prompt_tokens: number;
+    completion_tokens: number; cached_tokens: number; cost_usd: number;
+  };
+  cumulative_ms: number;
+  stage1_status: "running" | "success_dom" | "success_url" | "abandoned" | "stuck" | "error";
+  // extra historical fields
+  run_dir: string;
+  app?: string;               // set for sweep sub-dirs
+  terminal_reason?: string;
+  replay_path?: string | null; // relative to runs/ if available
+}
+
+// Per-persona result summary (from feedback.json or computed from trajectories)
+export interface PersonaResult {
+  persona_id: string;
+  archetype?: string;
+  n_trajectories: number;
+  n_success: number;
+  success_rate: number;
+  avg_steps: number;
+  terminal_reasons: Record<string, number>;
+  distinctive_quote: string | null;
+}
+
 // Mirror of usersim/web/server.py:RunRequest
 export interface RunPayload {
   config: string;

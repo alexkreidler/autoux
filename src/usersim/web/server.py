@@ -551,6 +551,214 @@ def run_grid(run_id: str):
     return FileResponse(p, media_type="video/mp4", filename=f"{run_id}_grid.mp4")
 
 
+@app.get("/api/runs/historical")
+def runs_historical() -> list[dict]:
+    """Scan runs/ dir and return metadata for every run directory that exists on disk,
+    including CLI-kicked sweeps that were never registered in _RUNS.
+
+    Layouts detected:
+      flat:  runs/<name>/trajectories/<p>__<t>.jsonl   (regular iter or small sweep)
+      sweep: runs/<name>/<app>/trajectories/<p>__<t>.jsonl  (multi-app sweep)
+    """
+    runs_root = _project_root() / "runs"
+    if not runs_root.exists():
+        return []
+
+    results: list[dict] = []
+    for entry in sorted(runs_root.iterdir(), key=lambda d: d.stat().st_mtime, reverse=True):
+        if not entry.is_dir() or entry.name == "__pycache__" or entry.name.startswith("."):
+            continue
+        # Skip active.json and non-dir entries
+        if not entry.is_dir():
+            continue
+
+        # Determine layout
+        traj_dir = entry / "trajectories"
+        summary_file = entry / "summary.json"
+        feedback_file = entry / "feedback.json"
+        grid_mp4 = entry / "grid.mp4"
+
+        if traj_dir.exists():
+            # flat layout
+            traj_files = list(traj_dir.glob("*.jsonl"))
+            n_traj = len(traj_files)
+            apps: list[str] = []
+            layout = "flat"
+        else:
+            # check for sweep layout: subdirs with their own trajectories/
+            app_dirs = [d for d in entry.iterdir() if d.is_dir() and (d / "trajectories").exists()]
+            if not app_dirs:
+                continue  # skip dirs with no recognizable run data
+            apps = [d.name for d in sorted(app_dirs)]
+            n_traj = sum(len(list(d.glob("trajectories/*.jsonl"))) for d in app_dirs)
+            layout = "sweep"
+
+        started_at: str | None = None
+        try:
+            started_at = entry.stat().st_mtime.__class__.__name__  # placeholder
+            import datetime
+            started_at = datetime.datetime.fromtimestamp(entry.stat().st_mtime).isoformat()
+        except Exception:
+            pass
+
+        target_summary: str | None = None
+        if summary_file.exists():
+            try:
+                data = json.loads(summary_file.read_text())
+                if isinstance(data, list) and data:
+                    # sweep summary.json is array of result objects
+                    apps_hit = set(d.get("app", "") for d in data if d.get("terminal_reason", "").startswith("success"))
+                    target_summary = f"{len(apps_hit)} apps · {len(data)} runs"
+                elif isinstance(data, dict):
+                    target_summary = data.get("summary") or data.get("description")
+            except Exception:
+                pass
+
+        display_name = entry.name
+        # Make it a bit more readable
+        if display_name.startswith("iter_"):
+            display_name = display_name.replace("iter_", "iter ")
+
+        results.append({
+            "run_dir": entry.name,
+            "display_name": display_name,
+            "layout": layout,
+            "apps": apps,
+            "n_trajectories": n_traj,
+            "started_at": started_at,
+            "has_feedback": feedback_file.exists() or any((entry / a / "feedback.json").exists() for a in apps),
+            "has_grid_mp4": grid_mp4.exists(),
+            "target_summary": target_summary,
+        })
+
+    return results
+
+
+@app.get("/api/runs/historical/{run_dir:path}/sessions")
+def historical_sessions(run_dir: str) -> list[dict]:
+    """Return reconstructed ActiveRollout-shaped dicts for every trajectory in a
+    historical run dir, suitable for populating the grid in replay mode.
+    """
+    if ".." in run_dir or run_dir.startswith("/"):
+        raise HTTPException(status_code=400, detail="invalid run_dir")
+    runs_root = _project_root() / "runs"
+    entry = runs_root / run_dir
+    if not entry.exists() or not entry.is_dir():
+        raise HTTPException(status_code=404, detail="run dir not found")
+
+    results: list[dict] = []
+    # Collect (trajectory_path, app_name or None) pairs
+    pairs: list[tuple[Path, str | None]] = []
+    traj_dir = entry / "trajectories"
+    if traj_dir.exists():
+        for f in sorted(traj_dir.glob("*.jsonl")):
+            pairs.append((f, None))
+    else:
+        for app_dir in sorted(entry.iterdir()):
+            if not app_dir.is_dir():
+                continue
+            atd = app_dir / "trajectories"
+            if atd.exists():
+                for f in sorted(atd.glob("*.jsonl")):
+                    pairs.append((f, app_dir.name))
+
+    for traj_path, app in pairs:
+        stem = traj_path.stem  # e.g. "elderly_first_time__pick_a_dashboard"
+        parts = stem.split("__", 1)
+        persona_id = parts[0] if parts else stem
+        task_id = parts[1] if len(parts) > 1 else "unknown"
+
+        header: dict = {}
+        footer: dict = {}
+        n_steps = 0
+        last_reasoning: str | None = None
+        current_url: str | None = None
+        current_title: str | None = None
+        status = "error"
+
+        try:
+            for raw_line in traj_path.read_text().splitlines():
+                line = raw_line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                kind = rec.get("kind")
+                if kind == "header":
+                    header = rec
+                elif kind == "step":
+                    n_steps += 1
+                    last_reasoning = (rec.get("reasoning") or [None])[-1] or last_reasoning
+                    obs = rec.get("observation") or {}
+                    current_url = obs.get("page_url") or current_url
+                    current_title = obs.get("page_title") or current_title
+                elif kind == "footer":
+                    footer = rec
+        except Exception:
+            continue
+
+        terminal = footer.get("terminal_reason", "error")
+        if terminal in ("success_dom", "success_url"):
+            status = terminal
+        elif terminal in ("abandoned",):
+            status = "abandoned"
+        elif terminal == "stuck":
+            status = "stuck"
+        else:
+            status = "error"
+
+        # Check for replay file
+        if app:
+            replay_rel = f"{run_dir}/{app}/replays/{stem}.mp4"
+            replay_abs = runs_root / run_dir / app / "replays" / f"{stem}.mp4"
+        else:
+            replay_rel = f"{run_dir}/replays/{stem}.mp4"
+            replay_abs = runs_root / run_dir / "replays" / f"{stem}.mp4"
+
+        fake_session_id = f"hist__{run_dir}__{app or 'flat'}__{stem}"
+
+        results.append({
+            "browser_session_id": fake_session_id,
+            "persona_id": persona_id,
+            "task_id": task_id,
+            "target_url": header.get("target_url") or footer.get("final_url") or "",
+            "started_at": header.get("started_at") or "",
+            "live_view_url": "",
+            "current_turn": n_steps,
+            "last_action": None,
+            "last_reasoning": last_reasoning,
+            "current_url": current_url,
+            "current_title": current_title,
+            "current_dom_hash": None,
+            "consecutive_unchanged": 0,
+            "cumulative_tokens": {"model_ms": 0, "prompt_tokens": 0, "completion_tokens": 0, "cached_tokens": 0, "cost_usd": 0},
+            "cumulative_ms": 0,
+            "stage1_status": status,
+            "run_dir": run_dir,
+            "app": app,
+            "terminal_reason": terminal,
+            "replay_path": replay_rel if replay_abs.exists() else None,
+        })
+
+    return results
+
+
+@app.get("/api/replay")
+def serve_replay(path: str):
+    """Serve a replay .mp4 with range-request support so the browser can scrub.
+    `path` is relative to runs/ (e.g. iter_000/replays/persona__task.mp4).
+    """
+    if ".." in path or path.startswith("/"):
+        raise HTTPException(status_code=400, detail="invalid path")
+    p = _project_root() / "runs" / path
+    if not p.exists() or not p.is_file() or p.suffix.lower() != ".mp4":
+        raise HTTPException(status_code=404, detail="replay not found")
+    return FileResponse(p, media_type="video/mp4",
+                        headers={"Accept-Ranges": "bytes", "Cache-Control": "public, max-age=3600"})
+
+
 @app.get("/api/stream")
 async def stream() -> StreamingResponse:
     async def gen():

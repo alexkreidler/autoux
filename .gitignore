@@ -69,3 +69,4 @@ Thumbs.db
 # committed reference data (cheap to track, expensive to regenerate).
 # Old generations live under avatars_v* and are not committed.
 configs/personas/avatars_v*/
+demo/
