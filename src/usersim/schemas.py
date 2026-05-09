@@ -57,6 +57,23 @@ class Task(BaseModel):
     metadata: dict[str, Any] = {}
 
 
+class App(BaseModel):
+    """A target web app to roll out against. Pushed by the infra teammate
+    to `configs/apps/registry.jsonl` — one App per line.
+
+    Each app owns its own tasks (so different apps can have different
+    success criteria), plus optional auth credentials embedded inline so
+    the agent's persona prompt knows them.
+    """
+    id: str                                   # slug, used in paths
+    name: str                                 # human display name
+    target_url: str                           # base URL; tasks may extend
+    auth: dict[str, str] | None = None        # {"username": "...", "password": "..."}
+    notes: str | None = None                  # one-liner from teammate
+    tasks: list[Task] = []                    # at least one for the app to be runnable
+    metadata: dict[str, Any] = {}
+
+
 # =============================================================================
 # Per-turn primitives (consumed by clients, produced into Trajectories)
 # =============================================================================

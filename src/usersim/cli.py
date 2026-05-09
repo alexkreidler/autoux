@@ -174,6 +174,108 @@ def cmd_debug(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sweep(args: argparse.Namespace) -> int:
+    """Sweep across the apps registry. One rollout per (app, task, persona)
+    triple, ALL flattened into one asyncio.gather — apps run in parallel,
+    not sequentially."""
+    from usersim.apps import filter_apps, load_apps
+    from usersim.map.worker import run_one
+
+    registry_path = Path(args.registry) if args.registry else None
+    apps = load_apps(registry_path)
+    apps = filter_apps(apps, set(args.apps.split(",")) if args.apps else None)
+
+    config_personas: list[Persona] = (
+        _load_personas(Path(args.personas_path)) if args.personas_path
+        else _load_config_personas({"personas_path": "configs/personas/seed.jsonl"})
+    )
+    if args.personas:
+        wanted = set(args.personas.split(","))
+        config_personas = [p for p in config_personas if p.id in wanted]
+
+    out_root = Path(args.out)
+    out_root.mkdir(parents=True, exist_ok=True)
+
+    agent_spec = {"type": args.agent or "surfer"}
+    if args.agent_endpoint:
+        agent_spec["endpoint"] = args.agent_endpoint
+    client = get_client(agent_spec)
+    browser_provider = KernelProvider()
+
+    # Build the flat work list.
+    triples: list[tuple] = []  # (app, persona, task)
+    for app in apps:
+        tasks_for_app = filter_app_tasks(app.tasks, args.tasks)
+        for task in tasks_for_app:
+            for persona in config_personas:
+                triples.append((app, persona, task))
+
+    print(f"[sweep] {len(apps)} apps × {len(config_personas)} personas → {len(triples)} rollouts")
+    print(f"[sweep] agent={agent_spec['type']}  concurrency={args.concurrency}  out={out_root}\n")
+
+    sem = asyncio.Semaphore(args.concurrency)
+
+    async def _one(app, persona, task) -> dict:
+        async with sem:
+            app_out = out_root / app.id
+            app_out.mkdir(parents=True, exist_ok=True)
+            print(f"[start] {app.id:<20} {persona.id} × {task.id}", flush=True)
+            traj = await run_one(
+                persona, task,
+                target_url=app.target_url,
+                target_commit="external",
+                client=client,
+                browser_provider=browser_provider,
+                out_dir=app_out,
+                max_turns=args.max_turns or 12,
+            )
+            print(f"[done ] {app.id:<20} {traj.terminal_reason:<14} {len(traj.steps):2d} steps", flush=True)
+            return {
+                "app": app.id,
+                "persona": persona.id,
+                "task": task.id,
+                "terminal_reason": traj.terminal_reason,
+                "n_steps": len(traj.steps),
+                "final_url": traj.final_url,
+            }
+
+    async def _all() -> list[dict]:
+        return await asyncio.gather(*[_one(*t) for t in triples])
+
+    results = asyncio.run(_all())
+
+    # Per-app aggregation.
+    from collections import defaultdict
+    by_app: dict[str, list] = defaultdict(list)
+    for r in results:
+        by_app[r["app"]].append(r)
+    for app_id, rs in by_app.items():
+        from usersim.io import read_trajectory
+        trajs = []
+        for r in rs:
+            p = out_root / app_id / "trajectories" / f"{r['persona']}__{r['task']}.jsonl"
+            if p.exists():
+                trajs.append(read_trajectory(p))
+        if trajs:
+            aggregate(trajs, iteration=0, target_commit="external", out_dir=out_root / app_id)
+
+    print("\n[summary]")
+    print(f"  {'app':<22} {'persona':<24} {'task':<22} {'terminal':<14} {'steps':>5}")
+    for r in sorted(results, key=lambda r: (r["app"], r["persona"], r["task"])):
+        print(f"  {r['app']:<22} {r['persona']:<24} {r['task']:<22} {r['terminal_reason']:<14} {r['n_steps']:>5}")
+    successes = sum(1 for r in results if r["terminal_reason"] in ("success_dom", "success_url", "agent_done"))
+    print(f"\n  successes: {successes}/{len(results)}")
+    (out_root / "summary.json").write_text(json.dumps(results, indent=2))
+    return 0
+
+
+def filter_app_tasks(tasks: list[Task], wanted_csv: str | None) -> list[Task]:
+    if not wanted_csv:
+        return tasks
+    wanted = set(wanted_csv.split(","))
+    return [t for t in tasks if t.id in wanted]
+
+
 def main() -> int:
     p = argparse.ArgumentParser(prog="usersim")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -211,6 +313,20 @@ def main() -> int:
     pd.add_argument("--stuck-threshold", type=int, default=3)
     pd.add_argument("--patience", type=int, default=None)
     pd.set_defaults(func=cmd_debug)
+
+    ps = sub.add_parser("sweep", help="run one rollout per (app, task, persona) across the apps registry")
+    ps.add_argument("--registry", help="path to apps registry JSONL (default: configs/apps/registry.jsonl)")
+    ps.add_argument("--out", required=True, help="root output dir; each app gets its own subdir")
+    ps.add_argument("--apps", help="comma-separated subset of app ids")
+    ps.add_argument("--tasks", help="comma-separated subset of task ids (filters within each app)")
+    ps.add_argument("--personas", help="comma-separated subset of persona ids")
+    ps.add_argument("--personas-path", help="override personas JSONL (default: configs/personas/seed.jsonl)")
+    ps.add_argument("--concurrency", type=int, default=4,
+                    help="concurrent workers per app (apps run sequentially)")
+    ps.add_argument("--agent", choices=available_clients())
+    ps.add_argument("--agent-endpoint")
+    ps.add_argument("--max-turns", type=int, default=None)
+    ps.set_defaults(func=cmd_sweep)
 
     args = p.parse_args()
     return args.func(args)

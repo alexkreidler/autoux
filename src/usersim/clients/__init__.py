@@ -19,20 +19,25 @@ _REGISTRY: dict[str, Callable[[dict[str, Any]], AgentClient]] = {
     "claude": lambda spec: ClaudeCUAClient(api_key=spec.get("api_key")),
 }
 
-# Surfer is optional — depends on `surfer_harness` which lives in a sibling repo.
-# If unavailable, just skip registering it; everything else still works.
+# Surfer is optional — depends on the harness in `usersim/harnesses/surfer/`,
+# which itself imports anthropic + the vLLM client lazily. Register only if
+# the import succeeds; everything else still works without it.
 try:
     from usersim.clients.surfer import SurferClient
-    _REGISTRY["surfer"] = lambda spec: SurferClient(
-        vllm_base=spec.get("vllm_base"),
-        navigator_model=spec.get("navigator_model"),
-        localizer_model=spec.get("localizer_model"),
-        api_key=spec.get("api_key"),
-        claude_only=spec.get("claude_only", False),
-        max_steps=spec.get("max_steps", 25),
-    )
 except ImportError:
     SurferClient = None  # type: ignore[assignment,misc]
+else:
+    def _surfer_factory(spec: dict[str, Any]) -> AgentClient:
+        assert SurferClient is not None
+        return SurferClient(
+            vllm_base=spec.get("vllm_base"),
+            navigator_model=spec.get("navigator_model"),
+            localizer_model=spec.get("localizer_model"),
+            api_key=spec.get("api_key"),
+            claude_only=spec.get("claude_only", False),
+            max_steps=spec.get("max_steps", 25),
+        )
+    _REGISTRY["surfer"] = _surfer_factory
 
 
 def register(name: str, factory: Callable[[dict[str, Any]], AgentClient]) -> None:

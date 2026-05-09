@@ -25,9 +25,20 @@ const STATUS_BADGE: Record<string, string> = {
 interface Props {
   session: ActiveRollout;
   persona?: Persona;
+  selected?: boolean;
+  selectMode?: boolean;
+  onFocus?: (id: string) => void;
+  onToggleSelect?: (id: string) => void;
 }
 
-export default function Cell({ session: s, persona }: Props) {
+export default function Cell({
+  session: s,
+  persona,
+  selected = false,
+  selectMode = false,
+  onFocus,
+  onToggleSelect,
+}: Props) {
   const status = s.stage1_status ?? "running";
   const borderColor = STATUS_BORDER[status] ?? "border-line";
   const badgeStyle = STATUS_BADGE[status] ?? STATUS_BADGE.running;
@@ -46,8 +57,17 @@ export default function Cell({ session: s, persona }: Props) {
   const totalTok = (tok?.prompt_tokens ?? 0) + (tok?.completion_tokens ?? 0);
   const reasoning = s.last_reasoning ?? "";
 
+  // Selection ring: olive when selected, transparent otherwise. Outer wrapper
+  // animates ring + scale so the cell pops when picked from a marquee.
+  const ringClasses = selected
+    ? "ring-2 ring-olive ring-offset-2 ring-offset-cream scale-[0.98]"
+    : "";
+
   return (
-    <div className={`relative bg-white border ${borderColor} overflow-hidden h-full transition-colors duration-150 group`}>
+    <div
+      data-cell-id={s.browser_session_id}
+      className={`relative bg-white border ${borderColor} overflow-hidden h-full transition-all duration-150 group ${ringClasses}`}
+    >
       {/* iframe takes the entire cell at natural 16:10 */}
       {s.live_view_url ? (
         <iframe
@@ -61,6 +81,41 @@ export default function Cell({ session: s, persona }: Props) {
         <div className="w-full h-full bg-cream flex items-center justify-center">
           <AvatarChip personaId={s.persona_id} size={64} />
         </div>
+      )}
+
+      {/* Click-blocker overlay — only active in select-mode. Captures mouse
+          so the iframe doesn't eat clicks while the user is picking cells. */}
+      {selectMode && (
+        <button
+          type="button"
+          aria-label={selected ? "deselect" : "select"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect?.(s.browser_session_id);
+          }}
+          className={`absolute inset-0 z-10 cursor-crosshair ${
+            selected ? "bg-olive/10" : "bg-transparent hover:bg-olive/5"
+          } transition-colors`}
+        />
+      )}
+
+      {/* Hover-only "expand" button — focus this cell. Top-right, just below
+          the status pill. Hidden in select mode (different interaction). */}
+      {!selectMode && onFocus && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onFocus(s.browser_session_id);
+          }}
+          aria-label="focus this rollout"
+          title="focus (click) · esc to exit"
+          className="absolute top-2 right-2 mt-7 z-20 w-7 h-7 flex items-center justify-center bg-white/90 backdrop-blur-sm border border-line text-ink-soft hover:bg-ink hover:text-cream transition-colors opacity-0 group-hover:opacity-100"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
+          </svg>
+        </button>
       )}
 
       {/* avatar chip — top-left. Hover reveals title + meta tooltip below. */}

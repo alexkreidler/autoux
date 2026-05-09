@@ -1,0 +1,34 @@
+# Pure-click task — sidesteps Surfer's typing bug (Navigator emits "click"
+# instead of "fill" for input fields, and worker only takes actions[0] per
+# turn so multi-action `fill` sequences collapse to click anyway).
+#
+# example.com has one link (`<a href="https://www.iana.org/...">`). A
+# successful trajectory: click it once, page navigates to iana.org. Done.
+
+target_url: https://example.com
+target_commit: smoke
+
+# Land on iana.org after the click.
+success_url_pattern: ".*iana\\.org.*"
+success_dom: null
+
+agent:
+  type: surfer
+
+max_turns: 5
+viewport:
+  width: 1280
+  height: 800
+
+tasks:
+  - id: click_more_info
+    description: |
+      Click the "More information..." link visible on this page. After
+      clicking, you should land on a different website. Then stop.
+
+personas:
+  - id: smoke_persona
+    archetype: "Simple test user — reads each label, follows instructions"
+    tech_literacy: medium
+    patience_steps: 5
+    quirks: ["follows instructions exactly"]
